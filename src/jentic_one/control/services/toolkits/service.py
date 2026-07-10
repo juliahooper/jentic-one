@@ -14,6 +14,7 @@ from jentic_one.control.repos import (
     ToolkitPermissionRepository,
     ToolkitRepository,
 )
+from jentic_one.control.repos.effects_repo import EffectsRepository
 from jentic_one.control.repos.prerequisite_repo import BoundAgentRow, PrerequisiteRepository
 from jentic_one.control.scoping.filters import build_access_filters
 from jentic_one.control.services.toolkits.errors import (
@@ -157,6 +158,21 @@ class ToolkitService:
             next_cursor = encode_cursor(last.created_at, last.id)
 
         return rows, has_more, next_cursor
+
+    async def discover_for_api(
+        self, *, vendor: str, name: str, version: str
+    ) -> list[tuple[str, str]]:
+        """Return (toolkit_id, toolkit_name) pairs for toolkits serving the given API.
+
+        No ownership scoping — any authenticated caller with ``apis:read`` can
+        discover what exists, even if not yet bound to them.
+        """
+        async with self._ctx.control_db.session() as session:
+            toolkit_ids = await EffectsRepository.resolve_toolkits_for_api(
+                session, vendor=vendor, name=name, version=version, owner_ids=None
+            )
+            names = await ToolkitRepository.get_names_by_ids(session, toolkit_ids)
+        return [(tid, names.get(tid, tid)) for tid in toolkit_ids]
 
     async def list_agents(
         self,

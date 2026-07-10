@@ -162,6 +162,8 @@ export type { ToolkitCreateResponse } from './models/ToolkitCreateResponse';
 export type { ToolkitCredentialBindingResponse } from './models/ToolkitCredentialBindingResponse';
 export type { ToolkitCredentialBindRequest } from './models/ToolkitCredentialBindRequest';
 export type { ToolkitCredentialListResponse } from './models/ToolkitCredentialListResponse';
+export type { ToolkitDiscoveryItemResponse } from './models/ToolkitDiscoveryItemResponse';
+export type { ToolkitDiscoveryResponse } from './models/ToolkitDiscoveryResponse';
 export type { ToolkitKeyCreateRequest } from './models/ToolkitKeyCreateRequest';
 export type { ToolkitKeyCreateResponse } from './models/ToolkitKeyCreateResponse';
 export type { ToolkitKeyListResponse } from './models/ToolkitKeyListResponse';
