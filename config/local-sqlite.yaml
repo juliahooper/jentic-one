@@ -26,7 +26,15 @@ server:
   port: 8000
   reload: true
 
-search:
+broker:
+  egress:
+    allowed_private_subnets:
+      - "127.0.0.0/8"
+      - "::1/128"
+    allowed_internal_domains:
+      - "localhost"
+
+embeddings:
   enabled: true
   search_enabled: true
   search_mode: lexical
