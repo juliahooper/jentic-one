@@ -2790,6 +2790,30 @@
       ],
       "auth_note": null,
       "authenticated": true,
+      "group": "Agent-facing (typically agent / service-account / toolkit)",
+      "implied_scopes": {
+        "apis:read": []
+      },
+      "method": "GET",
+      "operation_id": "discoverToolkitsForApi",
+      "path": "/toolkits/for-api/{vendor}/{name}/{version}",
+      "public": false,
+      "required_scopes": [
+        "apis:read"
+      ],
+      "summary": "Discover toolkits for an API",
+      "surface": "toolkits",
+      "typical_caller": "agent"
+    },
+    {
+      "actor_types": [
+        "user",
+        "agent",
+        "service_account",
+        "toolkit"
+      ],
+      "auth_note": null,
+      "authenticated": true,
       "group": "Any authenticated actor",
       "implied_scopes": {
         "toolkits:write": [
@@ -4453,5 +4477,5 @@
     ],
     "total": 30
   },
-  "total": 150
+  "total": 151
 }

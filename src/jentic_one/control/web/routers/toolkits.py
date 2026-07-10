@@ -25,6 +25,8 @@ from jentic_one.control.web.schemas.toolkits import (
     ToolkitCredentialBindingResponse,
     ToolkitCredentialBindRequest,
     ToolkitCredentialListResponse,
+    ToolkitDiscoveryItemResponse,
+    ToolkitDiscoveryResponse,
     ToolkitKeyCreateRequest,
     ToolkitKeyCreateResponse,
     ToolkitKeyListResponse,
@@ -95,6 +97,36 @@ def _to_permission_rule(rule: ToolkitPermissionRule) -> PermissionRuleReadSchema
             "_system": rule.is_system,
             "_comment": rule.comment,
         }
+    )
+
+
+# --- Toolkit discovery ---
+
+
+@router.get(
+    "/toolkits/for-api/{vendor}/{name}/{version}",
+    summary="Discover toolkits for an API",
+    response_model=ToolkitDiscoveryResponse,
+)
+async def discover_toolkits_for_api(
+    vendor: str,
+    name: str,
+    version: str,
+    identity: Identity = get_current_identity(required_permissions=["apis:read"]),
+    svc: ToolkitService = Depends(get_toolkit_service),
+) -> ToolkitDiscoveryResponse:
+    """Show what toolkits exist for a given API, even if not yet bound to the caller.
+
+    Agents can use this after discovering an API in the registry to find out
+    what to reference in an access request.
+    """
+    results = await svc.discover_for_api(vendor=vendor, name=name, version=version)
+    toolkits = [ToolkitDiscoveryItemResponse(toolkit_id=tid, name=name_) for tid, name_ in results]
+    return ToolkitDiscoveryResponse(
+        vendor=vendor,
+        name=name,
+        version=version,
+        available_toolkits=toolkits,
     )
 
 

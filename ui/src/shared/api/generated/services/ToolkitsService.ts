@@ -5,6 +5,7 @@
 import type { ToolkitAgentListResponse } from '../models/ToolkitAgentListResponse';
 import type { ToolkitCreateRequest } from '../models/ToolkitCreateRequest';
 import type { ToolkitCreateResponse } from '../models/ToolkitCreateResponse';
+import type { ToolkitDiscoveryResponse } from '../models/ToolkitDiscoveryResponse';
 import type { ToolkitListResponse } from '../models/ToolkitListResponse';
 import type { ToolkitResponse } from '../models/ToolkitResponse';
 import type { ToolkitUpdateRequest } from '../models/ToolkitUpdateRequest';
@@ -62,6 +63,42 @@ export class ToolkitsService {
             url: '/toolkits',
             body: requestBody,
             mediaType: 'application/json',
+            errors: {
+                400: `Bad Request`,
+                401: `Unauthorized`,
+                403: `Forbidden`,
+                422: `Unprocessable Entity`,
+                500: `Internal Server Error`,
+                503: `Service Unavailable`,
+            },
+        });
+    }
+    /**
+     * Discover toolkits for an API
+     * Show what toolkits exist for a given API, even if not yet bound to the caller.
+     *
+     * Agents can use this after discovering an API in the registry to find out
+     * what to reference in an access request.
+     * @returns ToolkitDiscoveryResponse Successful Response
+     * @throws ApiError
+     */
+    public static discoverToolkitsForApi({
+        vendor,
+        name,
+        version,
+    }: {
+        vendor: string,
+        name: string,
+        version: string,
+    }): CancelablePromise<ToolkitDiscoveryResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/toolkits/for-api/{vendor}/{name}/{version}',
+            path: {
+                'vendor': vendor,
+                'name': name,
+                'version': version,
+            },
             errors: {
                 400: `Bad Request`,
                 401: `Unauthorized`,

@@ -229,3 +229,23 @@ class PermissionRuleListResponse(BaseModel):
     """List of permission rules."""
 
     data: list[PermissionRuleReadSchema]
+
+
+class ToolkitDiscoveryItemResponse(BaseModel):
+    """A toolkit available for an API, visible for access-request discovery."""
+
+    toolkit_id: str
+    name: str
+
+
+class ToolkitDiscoveryResponse(BaseModel):
+    """Discovery response showing toolkits that serve a given API identity."""
+
+    vendor: str
+    name: str
+    version: str
+    available_toolkits: list[ToolkitDiscoveryItemResponse]
+    hint: str = (
+        "File an access request with resource_type='toolkit', action='bind'"
+        " and a resource_reference containing the API vendor/name/version."
+    )
