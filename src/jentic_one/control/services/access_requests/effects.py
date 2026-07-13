@@ -346,17 +346,20 @@ class EffectApplicator:
         """Resolve a ``toolkit:bind`` ``resource_reference`` to a single toolkit id.
 
         Resolves on the decision's ``session`` (shared snapshot) and within the
-        decider's ``owner_ids`` scope. Raises ``ValueError`` when neither a direct
-        id nor a usable reference is present, ``ToolkitReferenceUnresolvedError``
-        when no *visible* toolkit serves the API, and
-        ``ToolkitReferenceAmbiguousError`` when several do.
+        decider's ``owner_ids`` scope. Accepts both flat ``{vendor, name, version}``
+        and nested ``{"api": {vendor, name, version}}`` formats. Raises
+        ``RequiredFieldMissingError`` when vendor is absent,
+        ``ToolkitReferenceUnresolvedError`` when no *visible* toolkit serves the
+        API, and ``ToolkitReferenceAmbiguousError`` when several do.
         """
         reference = item.resource_reference or {}
+        if "api" in reference and isinstance(reference["api"], dict):
+            reference = reference["api"]
         vendor = reference.get("vendor")
         if not vendor:
-            raise ValueError(
-                "toolkit-bind effect requires resource_id, to_id, or a "
-                f"resource_reference with a vendor, item={item.id}"
+            raise RequiredFieldMissingError(
+                "vendor",
+                context="toolkit:bind resource_reference must include vendor",
             )
 
         candidates = await EffectsRepository.resolve_toolkits_for_api(

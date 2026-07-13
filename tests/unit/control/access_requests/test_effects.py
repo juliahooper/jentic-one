@@ -761,8 +761,9 @@ async def test_toolkit_bind_raises_on_missing_ids_and_reference() -> None:
     )
     applicator = EffectApplicator(ctx)
 
-    with pytest.raises(ValueError, match="resource_reference with a vendor"):
+    with pytest.raises(RequiredFieldMissingError) as excinfo:
         await applicator.apply(item, identity=_make_identity(), control_session=session)
+    assert excinfo.value.field == "vendor"
 
 
 async def test_scope_grant_raises_on_missing_resource_id() -> None:
@@ -826,3 +827,66 @@ def test_is_admin_effect_false_for_control_and_unsupported() -> None:
 
 def test_admin_effect_keys_are_exactly_the_admin_combinations() -> None:
     assert set(admin_effect_keys()) == {("toolkit", "bind"), ("scope", "grant")}
+
+
+# --- nested resource_reference unwrapping ---
+
+
+@patch(f"{_MODULE}.record_audit_best_effort", new_callable=AsyncMock)
+@patch(f"{_MODULE}.EffectsRepository")
+async def test_toolkit_bind_resolves_nested_api_reference(
+    mock_effects_repo: MagicMock,
+    mock_audit: AsyncMock,
+) -> None:
+    """Nested {"api": {vendor, name, version}} format is unwrapped and resolved."""
+    ctx = _make_ctx()
+    session = _make_session()
+    mock_effects_repo.resolve_toolkits_for_api = AsyncMock(return_value=["tk_nested"])
+    mock_effects_repo.bind_agent_to_toolkit = AsyncMock(return_value=("atb_nested", False))
+
+    item = _make_item(
+        resource_type="toolkit",
+        action="bind",
+        resource_id=None,
+        to_id=None,
+        resource_reference={
+            "api": {"vendor": "stripe.com", "name": "payments", "version": "2024-01"}
+        },
+    )
+    applicator = EffectApplicator(ctx)
+    effects = await applicator.apply(item, identity=_make_identity(), control_session=session)
+
+    assert isinstance(effects, ToolkitBindEffect)
+    assert effects.binding_id == "atb_nested"
+    mock_effects_repo.resolve_toolkits_for_api.assert_awaited_once_with(
+        session,
+        vendor="stripe.com",
+        name="payments",
+        version="2024-01",
+        owner_ids=None,
+    )
+
+
+@patch(f"{_MODULE}.record_audit_best_effort", new_callable=AsyncMock)
+@patch(f"{_MODULE}.EffectsRepository")
+async def test_toolkit_bind_missing_vendor_raises_required_field_error(
+    mock_effects_repo: MagicMock,
+    mock_audit: AsyncMock,
+) -> None:
+    """Missing vendor raises RequiredFieldMissingError (422), not ValueError (500)."""
+    ctx = _make_ctx()
+    session = _make_session()
+
+    item = _make_item(
+        resource_type="toolkit",
+        action="bind",
+        resource_id=None,
+        to_id=None,
+        resource_reference={"name": "payments"},
+    )
+    applicator = EffectApplicator(ctx)
+
+    with pytest.raises(RequiredFieldMissingError) as excinfo:
+        await applicator.apply(item, identity=_make_identity(), control_session=session)
+    assert excinfo.value.field == "vendor"
+    mock_effects_repo.bind_agent_to_toolkit.assert_not_called()
