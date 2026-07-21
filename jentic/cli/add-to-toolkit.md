@@ -1,7 +1,8 @@
+```markdown
 ---
 name: add-to-toolkit
 description: Request and activate toolkit access to obtain API credentials for making proxied requests through the broker
-version: 1
+version: 2
 ---
 
 # Requesting Toolkit Access for API Credentials
@@ -29,12 +30,12 @@ When you need to obtain credentials for an API so you can make authenticated, pr
 
 2. **Request toolkit access**
    
-   Request a toolkit binding for the target API using the `--toolkit` flag with vendor/name format:
+   Request a toolkit binding for the target API using the `--toolkit` flag with vendor/name/version format:
    ```bash
-   jentic access request --toolkit <vendor>/<api-name> --wait
+   jentic access request --toolkit <vendor>/<api-name>/<version> --wait
    ```
    
-   Note: Use vendor/name format (e.g., `jentic-test/test-api`), NOT the full vendor/name/version format. The `--wait` flag will block until the request is processed.
+   **Important**: Use the full vendor/name/version format (e.g., `jentic-test/test-api/1.0.0`), NOT just vendor/name. The `--wait` flag will block until the request is processed.
    
    Expected output:
    - Request submission confirmation
@@ -63,12 +64,12 @@ When you need to obtain credentials for an API so you can make authenticated, pr
 ## Quick Reference
 
 - `jentic access list` - View current toolkit bindings
-- `jentic access request --toolkit <vendor>/<api> --wait` - Request toolkit access
+- `jentic access request --toolkit <vendor>/<api>/<version> --wait` - Request toolkit access
 - `jentic access refresh` - Activate new permissions after approval
 
 ## Pitfalls
 
-- **Wrong format for API reference**: Use `vendor/name` format for the `--toolkit` flag, not `vendor/name/version`. The version is not included in toolkit requests.
+- **Wrong format for API reference**: Use the full `vendor/name/version` format for the `--toolkit` flag (e.g., `jentic-test/test-api/1.0.0`). Omitting the version will result in an "invalid API reference" error.
 - **Forgetting to refresh**: After a successful request approval, you must run `jentic access refresh` to activate the new binding. The approval alone doesn't update your local token.
 - **Not using --wait flag**: Without `--wait`, the command returns immediately and you'll need to poll for approval status separately. Using `--wait` provides a better experience for auto-approved requests.
 
@@ -80,3 +81,4 @@ Run `jentic access list` and confirm:
 3. A toolkit ID (starting with `tk_`) is displayed
 
 You are now ready to execute operations against the API using the broker's proxy functionality.
+```

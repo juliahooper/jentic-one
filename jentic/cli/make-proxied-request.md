@@ -1,7 +1,7 @@
 ---
 name: make-proxied-request
 description: Execute an API operation through the Jentic broker after discovering the API and obtaining access credentials
-version: 1
+version: 2
 ---
 
 # Making Proxied API Requests Through Jentic
@@ -68,6 +68,11 @@ When you need to call an external API through Jentic's broker service, which han
    jentic execute <operation_id>
    ```
    
+   Alternative: You can also use METHOD:URL format:
+   ```bash
+   jentic execute 'GET https://api.example.com/v1/endpoint'
+   ```
+   
    Expected output: The proxied response from the upstream API, with the broker handling authentication automatically.
 
 ## Quick Reference
@@ -77,15 +82,16 @@ When you need to call an external API through Jentic's broker service, which han
 - `jentic access list` - Check current toolkit bindings
 - `jentic access request --toolkit <vendor>/<name> --wait` - Request and wait for access
 - `jentic access refresh` - Refresh token after new bindings
-- `jentic execute <operation_id>` - Execute operation through broker
+- `jentic execute <operation_id>` - Execute operation through broker (or use 'METHOD URL' format)
 
 ## Pitfalls
 
 - **Don't skip token refresh**: After receiving a new toolkit binding, you must run `jentic access refresh` before the broker will recognize your new permissions
-- **Use operation_id, not METHOD/path**: The `execute` command requires the registry operation_id (from `apis operations`), not a "GET /path" format
+- **Use operation_id, not METHOD/path**: The `execute` command requires the registry operation_id (from `apis operations`), not a "GET /path" format. Alternatively, use the full 'METHOD URL' format with the complete upstream URL
 - **Full API reference required**: Commands like `apis operations` need the complete vendor/name/version format, not just vendor/name
 - **Localhost upstreams may be blocked**: The broker may reject requests to localhost/127.0.0.1 upstream URLs as a security policy (SSRF prevention)
-- **Auth requirements not visible in CLI**: The `apis inspect` command may not show authentication requirements; assume APIs require credentials unless documented otherwise
+- **Auth requirements not visible in CLI**: The `apis inspect` command does not show authentication requirements (outputs `"auth":null`); assume APIs require credentials unless documented otherwise. Authentication is handled transparently by the broker after toolkit binding approval
+- **Inspect command format**: `jentic inspect` accepts an operation_id, or 'METHOD URL' format (e.g., `jentic inspect 'GET https://api.example.com/v1/things'`), not METHOD:url without quotes or METHOD /path
 
 ## Verification
 
