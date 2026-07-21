@@ -1,7 +1,7 @@
 ---
 name: register-agent
 description: Register a new agent identity on the Jentic platform and obtain authentication credentials
-version: 1
+version: 2
 ---
 
 # Register Agent Identity
@@ -36,13 +36,14 @@ When you need to create a new agent identity on the Jentic platform for the firs
    ```
    The `--yes` flag automatically accepts prompts. The command will:
    - Submit your registration request to the control plane
-   - Automatically poll for admin approval (this may take a few seconds)
+   - Automatically poll for admin approval (typically takes 10-15 seconds)
    - Download and save authentication tokens locally once approved
    
    Expected output will show:
    - Registration submission confirmation
    - Polling status messages
    - Success message with token save location
+   - Helpful next-step suggestions
 
 4. **Verify authentication tokens**
    ```bash
@@ -58,17 +59,27 @@ When you need to create a new agent identity on the Jentic platform for the firs
 
 ## Pitfalls
 
-- **Manual approval delays**: The registration requires admin approval. The `--yes` flag enables automatic polling, which is recommended. Without it, you may need to manually check approval status.
+- **Manual approval delays**: The registration requires admin approval. The `--yes` flag enables automatic polling, which is recommended. Without it, you may need to manually check approval status. Typical approval time is 10-15 seconds.
 
 - **Token storage**: Tokens are automatically saved to your local profile after approval. Note the save location from the output for troubleshooting.
 
-- **Network connectivity**: Registration requires access to the platform's control plane. Ensure you can reach {{ platform.control_plane_url }} before starting.
+- **Network connectivity**: Registration requires access to the platform's control plane. Ensure you can reach the control plane before starting.
+
+- **Authentication is automatic**: Once registration completes, you are immediately authenticated. The JWT tokens work transparently for all subsequent CLI commands - no separate authentication step is needed.
 
 ## Verification
 
 Run `jentic profile whoami` and confirm:
-- Your agent identity is displayed
+- Your agent identity is displayed (format: `agnt_<identifier>`)
 - A valid token is present with remaining time
 - Scopes are listed (even if empty initially)
+- Profile shows as "active"
 
 If these details appear, your agent is successfully registered and authenticated.
+
+## Next Steps
+
+After successful registration, you can:
+- Browse available APIs: `jentic catalog list`
+- View your local API registry: `jentic apis list`
+- Search for specific APIs: `jentic catalog search <term>`

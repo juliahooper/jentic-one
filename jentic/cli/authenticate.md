@@ -1,7 +1,7 @@
 ---
 name: authenticate
 description: Exchange credentials for an access token using the Jentic CLI registration or login flow.
-version: 1
+version: 2
 ---
 
 # Authenticate with Jentic Platform
@@ -48,12 +48,20 @@ When you need to obtain a valid access token to interact with the Jentic platfor
    ```
    - Expected output: JSON showing your agent identity, scopes, and permissions
    - Confirms the token is valid and accepted by the platform
+   
+   Alternative test:
+   ```bash
+   jentic apis
+   ```
+   - Lists APIs in your local registry
+   - Any successful API command confirms authentication is working
 
 ## Quick Reference
 
 - `jentic profile list` - View saved authentication profiles and token status
 - `jentic register --yes` - Register new agent and obtain tokens
 - `jentic access whoami` - Verify current authentication and view permissions
+- `jentic apis` - List APIs (also confirms authentication is working)
 
 ## Pitfalls
 
@@ -63,9 +71,11 @@ When you need to obtain a valid access token to interact with the Jentic platfor
 
 - **Approval waiting**: New agent registrations require admin approval. The `--yes` flag enables automatic polling, but ensure an admin is available to approve your registration request.
 
+- **Token management is transparent**: Once authenticated, the CLI automatically includes your JWT token in all API requests. You don't need to manually pass tokens or set environment variables.
+
 ## Verification
 
 Authentication is successful when:
 - `jentic profile list` shows an active profile with time remaining on the token
 - `jentic access whoami` returns your agent identity without authentication errors
-- Subsequent CLI commands execute without "unauthorized" or "unauthenticated" errors
+- Subsequent CLI commands (like `jentic apis` or `jentic catalog`) execute without "unauthorized" or "unauthenticated" errors
