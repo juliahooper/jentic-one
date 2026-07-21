@@ -1,7 +1,8 @@
+```markdown
 ---
 name: find-credential
 description: Locate an API in the platform registry and identify its authentication requirements and available endpoints
-version: 2
+version: 3
 ---
 
 # Finding API Credentials and Endpoints in the Registry
@@ -36,7 +37,7 @@ When you need to discover what APIs are available in the Jentic platform, unders
    jentic apis operations <vendor>/<name>/<version>
    ```
    
-   **Important**: You must include the version number. The format `vendor/name` without version will fail with an error.
+   **Important**: You must include the version number. The format `vendor/name` without version will fail with an error like "invalid API reference 'vendor/name'; expected vendor/name/version".
    
    Expected output shows operation IDs (e.g., `op_6a58da5c629c0e3b921f48c9`) with their HTTP method and path.
 
@@ -50,7 +51,7 @@ When you need to discover what APIs are available in the Jentic platform, unders
    
    **Note**: The inspect command accepts:
    - Registry operation ID (from `jentic apis operations`)
-   - "METHOD URL" pair format (e.g., `jentic inspect 'GET https://api.example.com/v1/things'`)
+   - "METHOD URL" pair format (e.g., `jentic apis inspect 'GET https://api.example.com/v1/things'`)
    
    **Do not use** `METHOD:/path` format (e.g., `GET:/get`) - this will fail with "operation not found".
    
@@ -66,7 +67,7 @@ When you need to discover what APIs are available in the Jentic platform, unders
    jentic apis spec <vendor>/<name>/<version>
    ```
    
-   However, this may fail with a 500 error if the spec is not stored. **Authentication requirements will only become clear when you request access or attempt to execute operations.** Do not assume `auth: null` means no authentication is needed.
+   However, this may fail with a 500 error if the spec is not stored (e.g., "http 500: Revision 'xxx' has no stored spec file"). **Authentication requirements will only become clear when you request access or attempt to execute operations.** Do not assume `auth: null` means no authentication is needed.
 
 ## Quick Reference
 
@@ -76,6 +77,12 @@ When you need to discover what APIs are available in the Jentic platform, unders
 - `jentic apis inspect 'METHOD URL'` - View operation details using METHOD and full URL
 - `jentic apis spec <vendor>/<name>/<version>` - Download OpenAPI spec (may not be available)
 
+## Common Command Mistakes
+
+- The command is `jentic apis` (plural), not `jentic api` (singular)
+- There is no `jentic apis describe` command - use `jentic apis inspect` instead
+- There is no `jentic credentials` command - credential information is accessed through toolkit bindings after requesting access
+
 ## Pitfalls
 
 - **Missing version number**: Commands require the full `vendor/name/version` format, not just `vendor/name`. Omitting the version will result in an "invalid API reference" error.
@@ -84,6 +91,7 @@ When you need to discover what APIs are available in the Jentic platform, unders
   - The full "METHOD URL" format with complete URL (e.g., `'GET https://api.example.com/v1/things'`)
 - **Auth requirements not visible**: The CLI does not expose authentication requirements. The `auth` field will show `null` in inspect output even when authentication is required. Don't assume `auth: null` means no authentication is needed.
 - **Spec download may fail**: The OpenAPI spec endpoint may return 500 errors if the spec file is not stored in the platform.
+- **No direct credential discovery**: You cannot browse or list credentials directly. Credentials are only accessible after requesting toolkit access via `jentic access request`.
 
 ## Verification
 
@@ -93,3 +101,4 @@ You have successfully completed this task when you can answer:
 - What are the operation IDs for each endpoint?
 
 Note: You will not be able to determine authentication requirements from the CLI alone. This information will only become available after requesting toolkit access and attempting to execute operations.
+```
