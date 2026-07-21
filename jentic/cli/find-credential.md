@@ -2,7 +2,7 @@
 ---
 name: find-credential
 description: Locate an API in the platform registry and identify its authentication requirements and available endpoints
-version: 3
+version: 4
 ---
 
 # Finding API Credentials and Endpoints in the Registry
@@ -29,19 +29,35 @@ When you need to discover what APIs are available in the Jentic platform, unders
    
    Expected output shows APIs with their vendor/name/version format (e.g., `jentic-test/test-api/1.0.0`).
 
-2. **List operations for a specific API**
+2. **Show details for a specific API**
    
-   Once you have the full API reference (vendor/name/version), list its available operations:
+   Once you have identified an API, use the `show` command to view its details:
+   
+   ```bash
+   jentic apis show <vendor>/<name>/<version>
+   ```
+   
+   **Important**: You must include the version number. The format `vendor/name` without version will fail with an error like "invalid API reference 'vendor/name'; expected vendor/name/version".
+   
+   Expected output shows the API's operations with their HTTP method and path (e.g., `GET /get`).
+
+3. **List operations for a specific API**
+   
+   To get more detailed operation information including operation IDs, use:
    
    ```bash
    jentic apis operations <vendor>/<name>/<version>
    ```
    
-   **Important**: You must include the version number. The format `vendor/name` without version will fail with an error like "invalid API reference 'vendor/name'; expected vendor/name/version".
+   **Note**: Operation IDs may only be visible when using the `--json` flag:
+   
+   ```bash
+   jentic apis operations <vendor>/<name>/<version> --json
+   ```
    
    Expected output shows operation IDs (e.g., `op_6a58da5c629c0e3b921f48c9`) with their HTTP method and path.
 
-3. **Inspect individual operations**
+4. **Inspect individual operations**
    
    Use the operation ID from the previous step to get detailed information:
    
@@ -57,7 +73,7 @@ When you need to discover what APIs are available in the Jentic platform, unders
    
    This shows the operation's method, path, parameters, and other metadata.
 
-4. **Check authentication requirements**
+5. **Check authentication requirements**
    
    **Known limitation**: Authentication requirements are not visible in the CLI output. The `auth` field in operation inspection will show `null` even when authentication is required. 
    
@@ -72,7 +88,9 @@ When you need to discover what APIs are available in the Jentic platform, unders
 ## Quick Reference
 
 - `jentic apis list --vendor <vendor>` - Browse registry by vendor
+- `jentic apis show <vendor>/<name>/<version>` - View API summary with operations
 - `jentic apis operations <vendor>/<name>/<version>` - List API operations (requires full version)
+- `jentic apis operations <vendor>/<name>/<version> --json` - List operations with operation IDs visible
 - `jentic apis inspect <operation_id>` - View operation details using operation ID
 - `jentic apis inspect 'METHOD URL'` - View operation details using METHOD and full URL
 - `jentic apis spec <vendor>/<name>/<version>` - Download OpenAPI spec (may not be available)
@@ -82,12 +100,14 @@ When you need to discover what APIs are available in the Jentic platform, unders
 - The command is `jentic apis` (plural), not `jentic api` (singular)
 - There is no `jentic apis describe` command - use `jentic apis inspect` instead
 - There is no `jentic credentials` command - credential information is accessed through toolkit bindings after requesting access
+- `jentic apis show` requires the full `vendor/name/version` format as a single argument, not separate arguments
 
 ## Pitfalls
 
-- **Missing version number**: Commands require the full `vendor/name/version` format, not just `vendor/name`. Omitting the version will result in an "invalid API reference" error.
+- **Missing version number**: Commands require the full `vendor/name/version` format, not just `vendor/name`. Omitting the version will result in an "invalid API reference" error. The version is not always obvious from `jentic apis list` output, so note it carefully.
+- **Operation IDs may be hidden**: Operation IDs may not be visible in default output. Use the `--json` flag with `jentic apis operations` to ensure operation IDs are displayed.
 - **Operation inspection requires operation ID or full URL**: You cannot use `METHOD:/path` format (e.g., `GET:/get`). You must use either:
-  - The operation ID from `jentic apis operations`
+  - The operation ID from `jentic apis operations` (may require `--json` flag to see)
   - The full "METHOD URL" format with complete URL (e.g., `'GET https://api.example.com/v1/things'`)
 - **Auth requirements not visible**: The CLI does not expose authentication requirements. The `auth` field will show `null` in inspect output even when authentication is required. Don't assume `auth: null` means no authentication is needed.
 - **Spec download may fail**: The OpenAPI spec endpoint may return 500 errors if the spec file is not stored in the platform.
