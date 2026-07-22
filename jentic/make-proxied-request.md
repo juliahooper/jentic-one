@@ -1,7 +1,7 @@
 ---
 name: make-proxied-request
 description: Make authenticated API requests through the Jentic broker using toolkit credentials
-version: 1
+version: 2
 ---
 
 # Making Proxied API Requests Through Jentic
@@ -95,7 +95,9 @@ To execute a request, you need the operation's unique identifier from the regist
 jentic apis operations <vendor>/<api-name>/<version> --json
 ```
 
-The `--json` flag is important because the formatted output doesn't display operation IDs. Look for the `operation_id` field (format: `op_<hash>`).
+The `--json` flag is **required** because the formatted output doesn't display operation IDs. Look for the `operation_id` field (format: `op_<hash>`).
+
+**Important:** The command expects the full three-part identifier. Using a partial identifier (e.g., `vendor/api-name` without version) will fail with "invalid API reference" error.
 
 **HTTP:**
 ```
@@ -156,7 +158,7 @@ jentic apis list                                    # List available APIs
 jentic access request <toolkit>                     # Request toolkit access
 jentic auth refresh                                 # Refresh token with new bindings
 jentic auth status                                  # Check current bindings
-jentic apis operations <api> --json                 # List operations with IDs
+jentic apis operations <vendor>/<name>/<version> --json  # List operations with IDs
 jentic execute <operation_id>                       # Execute proxied request
 jentic execute <operation_id> --param key=value     # Execute with parameters
 ```
@@ -168,6 +170,7 @@ POST /access-requests                               # Request toolkit access
 POST /auth/refresh                                  # Refresh authentication token
 GET  /apis/<vendor>/<name>/<version>/operations     # List operations
 POST /execute/<operation_id>                        # Execute proxied request
+GET  /executions                                    # View execution history
 ```
 
 ## Pitfalls
@@ -176,13 +179,19 @@ POST /execute/<operation_id>                        # Execute proxied request
 
 - **Stale token after access grant**: After requesting and receiving toolkit access, you must refresh your authentication token. The new binding won't be active until you do.
 
-- **SSRF protection blocks localhost**: The broker blocks requests to localhost, 127.0.0.1, and private IP ranges for security. Test APIs must be hosted on publicly routable addresses or the broker must be configured to allow the target range.
+- **SSRF protection blocks localhost**: The broker blocks requests to localhost, 127.0.0.1, and private IP ranges for security. Test APIs must be hosted on publicly routable addresses or the broker must be configured to allow the target range. This affects both URL-based and operation-ID-based execution.
 
-- **Wrong API identifier format**: API references must be in `vendor/name/version` format. Partial identifiers or other formats will fail.
+- **Wrong API identifier format**: API references must be in `vendor/name/version` format (all three parts required). Partial identifiers like `vendor/name` will fail with "invalid API reference" error. The `jentic apis operations` command strictly requires the full three-part identifier.
 
-- **Search command limitations**: The `jentic search` command may not return results reliably. Use `jentic apis list` and `jentic apis operations` for discovery instead.
+- **Search command limitations**: The `jentic search` command may not return results reliably. The `--api` flag is not supported and will cause "unknown flag" errors. Use `jentic apis list` and `jentic apis operations` for discovery instead.
 
 - **Confusing operation reference formats**: The `execute` command requires the registry operation ID (e.g., `op_<hash>`), not the API path, HTTP method, or spec operationId. Always get this from `jentic apis operations --json`.
+
+- **No CLI command for execution history**: There is no CLI command to view execution history. You must use the HTTP endpoint `GET /executions` with your bearer token to view past executions.
+
+- **OpenAPI spec download may fail**: Attempting to download the OpenAPI spec for an API revision may return a 500 error if the spec file is not stored in the system.
+
+- **Authentication requirements not in metadata**: The operation metadata (`auth` field) may show `null` even when the API requires authentication headers. Authentication requirements are defined in the OpenAPI spec and injected by the broker via toolkit credentials, not visible in the operation listing.
 
 ## Verification
 
@@ -206,6 +215,10 @@ GET {{ platform.control_plane_url }}/auth/status
 # Verify successful execution
 POST {{ platform.broker_url }}/execute/<operation_id>
 # Response status 200-299 with upstream API data (not broker error JSON)
+
+# View execution history
+GET {{ platform.control_plane_url }}/executions
+# Returns array of execution records
 ```
 
 Success means: (1) your token includes the toolkit binding, (2) the execute command/endpoint returns a response, (3) the response is from the upstream API (not a broker error), and (4) the status indicates success per the API's contract.

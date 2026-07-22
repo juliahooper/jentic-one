@@ -1,7 +1,7 @@
 ---
 name: register-agent
 description: Register a new agent identity on the Jentic platform and obtain authentication credentials
-version: 1
+version: 2
 ---
 
 # Register Agent Identity
@@ -46,7 +46,7 @@ Content-Type: application/json
 ### 2. Wait for Admin Approval
 
 **CLI:**
-The `register` command automatically polls for approval. You'll see status updates in the output. This typically takes 10-30 seconds in development environments.
+The `register` command automatically polls for approval. You'll see status updates in the output. This typically takes a few seconds in development environments (often with automatic approval enabled).
 
 **HTTP:**
 Poll the registration status endpoint:
@@ -64,7 +64,10 @@ Continue polling (with exponential backoff) until the status changes from `pendi
 ### 3. Store Authentication Credentials
 
 **CLI:**
-The CLI automatically saves credentials to `.jentic/profiles/default` in your home directory or working directory. No manual action required.
+The CLI automatically saves credentials to `.jentic/profiles/default` in your home directory or working directory. No manual action required. The output will clearly show:
+- Your agent_id
+- Approval URL (if applicable)
+- Token expiry information
 
 **HTTP:**
 Extract and securely store the following from the approval response:
@@ -130,7 +133,7 @@ Authorization: Bearer <refresh-token>
 
 - **Don't lose your tokens**: CLI stores them automatically, but if using HTTP directly, ensure you persist the refresh token securely. Access tokens expire, but refresh tokens are long-lived.
 
-- **Registration requires approval**: The registration process is asynchronous. Don't assume immediate access. The CLI handles polling automatically, but HTTP clients must implement polling logic.
+- **Registration requires approval**: The registration process is asynchronous. Don't assume immediate access. The CLI handles polling automatically, but HTTP clients must implement polling logic. In development environments, approval may be automatic and take only a few seconds.
 
 - **Profile location (CLI)**: The CLI saves credentials to `.jentic/profiles/default`. If running in a containerized or restricted environment, ensure this path is writable and persistent.
 

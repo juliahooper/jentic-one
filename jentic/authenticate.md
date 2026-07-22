@@ -1,7 +1,7 @@
 ---
 name: authenticate
 description: Exchange credentials for an access token (JWT bearer or CLI login) to access the Jentic platform
-version: 1
+version: 2
 ---
 
 # Authenticate with Jentic Platform
@@ -48,6 +48,13 @@ jentic apis
 
 If this returns a list of APIs (even if empty), your token is valid.
 
+You can also check your profile and token status:
+```bash
+jentic profile list
+```
+
+This shows your active profile with token expiry information and validation status.
+
 **HTTP:**
 ```
 GET {{ platform.control_plane_url }}/apis
@@ -89,6 +96,9 @@ jentic register --name <agent-name>
 # Verify authentication
 jentic apis
 
+# Check profile and token status
+jentic profile list
+
 # Refresh access token
 jentic refresh
 ```
@@ -122,6 +132,12 @@ Run any authenticated command successfully:
 ```bash
 jentic apis
 # Should return API list or empty array, not authentication error
+```
+
+Or check your profile status:
+```bash
+jentic profile list
+# Should show active profile with valid token and expiry time
 ```
 
 ### HTTP

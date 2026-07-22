@@ -1,7 +1,7 @@
 ---
 name: add-to-toolkit
 description: Request access to a toolkit containing API credentials so you can make proxied requests through the broker
-version: 1
+version: 2
 ---
 
 # Request Toolkit Access
@@ -49,6 +49,9 @@ jentic access request --toolkit <vendor>/<toolkit-name> --wait
 
 The `--wait` flag causes the command to poll until the request is approved or denied.
 
+**Optional flags:**
+- `--reason "Your reason text"` - Provide a reason for the access request (helpful for manual approval workflows)
+
 **HTTP:**
 ```
 POST {{ platform.control_plane_url }}/agent/access/requests
@@ -56,14 +59,16 @@ Authorization: Bearer <your_agent_token>
 Content-Type: application/json
 
 {
-  "toolkit": "<vendor>/<toolkit-name>"
+  "toolkit": "<vendor>/<toolkit-name>",
+  "reason": "Your reason text (optional)"
 }
 ```
 
 **Expected Response:**
-- CLI: Success message indicating the request was approved, with the toolkit binding ID
+- CLI: Success message indicating the request was approved, with the toolkit binding ID and access request ID (format: `areq_...`)
 - HTTP: 201 Created with a request object containing `status` field
 - If `--wait` is used (CLI) or you poll the request (HTTP), wait for `status: "approved"`
+- Auto-approved toolkits typically complete within seconds
 
 **If Request is Pending:**
 - Some toolkits require manual approval
@@ -119,6 +124,9 @@ jentic access list
 # Request toolkit access (wait for approval)
 jentic access request --toolkit <vendor>/<toolkit-name> --wait
 
+# Request with reason
+jentic access request --toolkit <vendor>/<toolkit-name> --reason "Testing integration" --wait
+
 # Request without waiting
 jentic access request --toolkit <vendor>/<toolkit-name>
 
@@ -163,3 +171,5 @@ After obtaining toolkit access, you can verify it works by attempting to execute
 jentic execute <operation_id>
 ```
 If the toolkit binding is correct, the broker will inject the credential and proxy your request. A successful response (even if it's an application error from the upstream API) confirms the toolkit is properly bound.
+
+**Note:** The Jentic broker blocks requests to localhost and other restricted addresses (e.g., 127.0.0.1) as a security measure. If you receive an error about restricted addresses, this is expected behavior and not a configuration issue with your toolkit binding.
