@@ -1,7 +1,8 @@
+```yaml
 ---
 name: authenticate
 description: Exchange credentials for an access token using the Jentic CLI registration or login flow.
-version: 2
+version: 3
 ---
 
 # Authenticate with Jentic Platform
@@ -30,7 +31,7 @@ When you need to obtain a valid access token to interact with the Jentic platfor
    jentic register --yes
    ```
    - The `--yes` flag auto-confirms prompts
-   - CLI will automatically poll for admin approval
+   - CLI will automatically poll for admin approval (typically completes within ~10 seconds)
    - Expected output: Success message indicating registration completed
    - Tokens (access + refresh) are automatically saved to your profile
 
@@ -69,7 +70,7 @@ When you need to obtain a valid access token to interact with the Jentic platfor
 
 - **Token expiration**: Access tokens have a limited lifetime (typically 1 hour). Check token status with `jentic profile list` before starting work. The CLI should handle refresh automatically, but be aware of expiration.
 
-- **Approval waiting**: New agent registrations require admin approval. The `--yes` flag enables automatic polling, but ensure an admin is available to approve your registration request.
+- **Approval waiting**: New agent registrations require admin approval. The `--yes` flag enables automatic polling, but ensure an admin is available to approve your registration request. In typical environments, approval completes within ~10 seconds.
 
 - **Token management is transparent**: Once authenticated, the CLI automatically includes your JWT token in all API requests. You don't need to manually pass tokens or set environment variables.
 
@@ -79,3 +80,4 @@ Authentication is successful when:
 - `jentic profile list` shows an active profile with time remaining on the token
 - `jentic access whoami` returns your agent identity without authentication errors
 - Subsequent CLI commands (like `jentic apis` or `jentic catalog`) execute without "unauthorized" or "unauthenticated" errors
+```

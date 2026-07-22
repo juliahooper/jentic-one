@@ -1,7 +1,7 @@
 ---
 name: register-agent
 description: Register a new agent identity on the Jentic platform and obtain authentication credentials
-version: 2
+version: 3
 ---
 
 # Register Agent Identity
@@ -42,7 +42,8 @@ When you need to create a new agent identity on the Jentic platform for the firs
    Expected output will show:
    - Registration submission confirmation
    - Polling status messages
-   - Success message with token save location
+   - Success message with token save location (typically `.jentic/profiles/default`)
+   - Your assigned agent identity (format: `agnt_<identifier>`)
    - Helpful next-step suggestions
 
 4. **Verify authentication tokens**
@@ -61,11 +62,11 @@ When you need to create a new agent identity on the Jentic platform for the firs
 
 - **Manual approval delays**: The registration requires admin approval. The `--yes` flag enables automatic polling, which is recommended. Without it, you may need to manually check approval status. Typical approval time is 10-15 seconds.
 
-- **Token storage**: Tokens are automatically saved to your local profile after approval. Note the save location from the output for troubleshooting.
+- **Token storage**: Tokens are automatically saved to your local profile after approval (typically to `.jentic/profiles/default`). Note the save location from the output for troubleshooting.
 
 - **Network connectivity**: Registration requires access to the platform's control plane. Ensure you can reach the control plane before starting.
 
-- **Authentication is automatic**: Once registration completes, you are immediately authenticated. The JWT tokens work transparently for all subsequent CLI commands - no separate authentication step is needed.
+- **Authentication is automatic**: Once registration completes, you are immediately authenticated. The JWT tokens (both access and refresh tokens) work transparently for all subsequent CLI commands - no separate authentication step is needed. Tokens typically have 1-hour validity.
 
 ## Verification
 
