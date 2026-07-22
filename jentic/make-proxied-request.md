@@ -1,7 +1,8 @@
+```markdown
 ---
 name: make-proxied-request
 description: Make authenticated API requests through the Jentic broker using toolkit credentials
-version: 2
+version: 3
 ---
 
 # Making Proxied API Requests Through Jentic
@@ -31,6 +32,8 @@ jentic apis list
 
 Look for your target API in the output. Note the vendor/name/version format (e.g., `vendor-name/api-name/1.0.0`).
 
+**Important:** The command is `jentic apis` (plural), not `jentic api` (singular).
+
 **HTTP:**
 ```
 GET {{ platform.control_plane_url }}/apis
@@ -47,10 +50,15 @@ If you don't already have access to a toolkit containing the API's credentials, 
 
 **CLI:**
 ```bash
-jentic access request <toolkit-name>
+jentic access request --toolkit <api-name> --wait
 ```
 
-The system will return immediately with approval status. Auto-approval is common for test environments.
+The `--wait` flag makes the command block until approval is received. Auto-approval is common for test environments. You can also use the API name directly as the toolkit name.
+
+Alternative without waiting:
+```bash
+jentic access request <toolkit-name>
+```
 
 **HTTP:**
 ```
@@ -64,6 +72,8 @@ Content-Type: application/json
 ```
 
 **Expected outcome:** Response indicates `approved: true` or similar approval status.
+
+**Note:** There is no `jentic toolkits` command to list available toolkits. Use the access request command with the API name or toolkit name you need.
 
 ### 3. Refresh Your Authentication Token
 
@@ -99,6 +109,13 @@ The `--json` flag is **required** because the formatted output doesn't display o
 
 **Important:** The command expects the full three-part identifier. Using a partial identifier (e.g., `vendor/api-name` without version) will fail with "invalid API reference" error.
 
+You can also inspect a specific operation:
+```bash
+jentic apis inspect <operation_id>
+```
+
+This shows the full operation details including the upstream URL.
+
 **HTTP:**
 ```
 GET {{ platform.control_plane_url }}/apis/<vendor>/<api-name>/<version>/operations
@@ -121,6 +138,12 @@ jentic execute <operation_id>
 For requests with parameters, query strings, or body:
 ```bash
 jentic execute <operation_id> --param key=value --header "X-Custom: value"
+```
+
+Alternative formats supported:
+```bash
+jentic execute METHOD:url              # Full URL
+jentic execute METHOD:/path            # Path only (requires API context)
 ```
 
 **HTTP:**
@@ -154,8 +177,10 @@ The response status and body reflect the upstream API's response. Broker errors 
 
 ### CLI Commands
 ```bash
-jentic apis list                                    # List available APIs
-jentic access request <toolkit>                     # Request toolkit access
+jentic apis list                                    # List available APIs (note: plural "apis")
+jentic apis show <vendor>/<name>/<version>          # Show API details
+jentic apis inspect <operation_id>                  # Inspect specific operation
+jentic access request --toolkit <name> --wait       # Request toolkit access (blocking)
 jentic auth refresh                                 # Refresh token with new bindings
 jentic auth status                                  # Check current bindings
 jentic apis operations <vendor>/<name>/<version> --json  # List operations with IDs
@@ -175,13 +200,15 @@ GET  /executions                                    # View execution history
 
 ## Pitfalls
 
+- **Command is "apis" not "api"**: The CLI command is `jentic apis` (plural). Using `jentic api` will result in "unknown command" error with a suggestion to use `apis`.
+
 - **Operation ID not visible**: The formatted output of `jentic apis operations` doesn't show operation IDs. Always use `--json` flag to see the `operation_id` field needed for execution.
 
 - **Stale token after access grant**: After requesting and receiving toolkit access, you must refresh your authentication token. The new binding won't be active until you do.
 
-- **SSRF protection blocks localhost**: The broker blocks requests to localhost, 127.0.0.1, and private IP ranges for security. Test APIs must be hosted on publicly routable addresses or the broker must be configured to allow the target range. This affects both URL-based and operation-ID-based execution.
+- **SSRF protection blocks localhost**: The broker blocks requests to localhost, 127.0.0.1, and private IP ranges for security. Test APIs must be hosted on publicly routable addresses or the broker must be configured to allow the target range. This affects both URL-based and operation-ID-based execution. Error message: "upstream URL resolves to a blocked address range" with `invalid_upstream_url` error code.
 
-- **Wrong API identifier format**: API references must be in `vendor/name/version` format (all three parts required). Partial identifiers like `vendor/name` will fail with "invalid API reference" error. The `jentic apis operations` command strictly requires the full three-part identifier.
+- **Wrong API identifier format**: API references must be in `vendor/name/version` format (all three parts required). Partial identifiers like `vendor/name` will fail with "invalid API reference; expected vendor/name/version" error. The `jentic apis operations` and `jentic apis show` commands strictly require the full three-part identifier.
 
 - **Search command limitations**: The `jentic search` command may not return results reliably. The `--api` flag is not supported and will cause "unknown flag" errors. Use `jentic apis list` and `jentic apis operations` for discovery instead.
 
@@ -189,9 +216,11 @@ GET  /executions                                    # View execution history
 
 - **No CLI command for execution history**: There is no CLI command to view execution history. You must use the HTTP endpoint `GET /executions` with your bearer token to view past executions.
 
+- **No CLI command to list toolkits**: There is no `jentic toolkits` command. To request toolkit access, use the API name or known toolkit name directly with `jentic access request --toolkit <name>`.
+
 - **OpenAPI spec download may fail**: Attempting to download the OpenAPI spec for an API revision may return a 500 error if the spec file is not stored in the system.
 
-- **Authentication requirements not in metadata**: The operation metadata (`auth` field) may show `null` even when the API requires authentication headers. Authentication requirements are defined in the OpenAPI spec and injected by the broker via toolkit credentials, not visible in the operation listing.
+- **Authentication requirements not in metadata**: The operation metadata (`auth` field and `security_schemes` field) may show `null` or be empty even when the API requires authentication headers. Authentication requirements are defined in the OpenAPI spec and injected by the broker via toolkit credentials, not visible in the operation listing.
 
 ## Verification
 
@@ -200,6 +229,10 @@ GET  /executions                                    # View execution history
 # Verify toolkit binding
 jentic auth status
 # Should show your toolkit in the bindings list
+
+# Inspect operation before executing
+jentic apis inspect <operation_id>
+# Shows full operation details including upstream URL
 
 # Verify successful execution
 jentic execute <operation_id>
@@ -222,3 +255,4 @@ GET {{ platform.control_plane_url }}/executions
 ```
 
 Success means: (1) your token includes the toolkit binding, (2) the execute command/endpoint returns a response, (3) the response is from the upstream API (not a broker error), and (4) the status indicates success per the API's contract.
+```

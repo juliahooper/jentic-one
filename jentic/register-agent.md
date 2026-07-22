@@ -1,7 +1,8 @@
+```markdown
 ---
 name: register-agent
 description: Register a new agent identity on the Jentic platform and obtain authentication credentials
-version: 2
+version: 3
 ---
 
 # Register Agent Identity
@@ -46,7 +47,7 @@ Content-Type: application/json
 ### 2. Wait for Admin Approval
 
 **CLI:**
-The `register` command automatically polls for approval. You'll see status updates in the output. This typically takes a few seconds in development environments (often with automatic approval enabled).
+The `register` command automatically polls for approval. You'll see status updates in the output. This typically takes a few seconds in development environments (often with automatic approval enabled). The CLI will display clear confirmation when approval is complete, including your agent ID and token information.
 
 **HTTP:**
 Poll the registration status endpoint:
@@ -68,6 +69,7 @@ The CLI automatically saves credentials to `.jentic/profiles/default` in your ho
 - Your agent_id
 - Approval URL (if applicable)
 - Token expiry information
+- Next steps for using the platform
 
 **HTTP:**
 Extract and securely store the following from the approval response:
@@ -84,7 +86,7 @@ Store these in a secure location (environment variables, secrets manager, or enc
 jentic agents list
 ```
 
-Look for your agent ID in the output.
+Look for your agent ID in the output. This confirms both registration and authentication are working.
 
 **HTTP:**
 ```
@@ -141,6 +143,8 @@ Authorization: Bearer <refresh-token>
 
 - **No `whoami` command**: There is no `jentic whoami` command. Use `jentic agents list` to see your agent identity.
 
+- **Authentication is automatic**: After successful registration with the CLI, you are immediately authenticated. There is no separate authentication step required - the registration process handles credential storage and you can immediately proceed to use other commands like `jentic apis list` or `jentic access request`.
+
 ## Verification
 
 ### CLI Verification
@@ -159,3 +163,4 @@ Make a request to `GET {{ platform.control_plane_url }}/v1/agents/me` and confir
 - CLI: Check that `.jentic/profiles/default` exists and contains token data
 - HTTP: Verify you can make authenticated requests to other endpoints (e.g., `GET /v1/apis`)
 - Both: Confirm that unauthenticated requests to protected endpoints return 401 Unauthorized
+```

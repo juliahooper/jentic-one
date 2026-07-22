@@ -1,7 +1,7 @@
 ---
 name: find-credential
 description: Locate an API in the platform registry and identify its authentication requirements and available endpoints
-version: 2
+version: 3
 ---
 
 # Finding API Credentials and Endpoints
@@ -35,7 +35,7 @@ Authorization: Bearer <token>
 
 Expected response includes an array of API objects with `vendor`, `name`, `version`, and `id` fields. Note the exact version string for the target API.
 
-**Note:** The command `jentic apis` (without subcommand) may also work, but `jentic apis list` is the explicit form.
+**Common mistake:** The command is `jentic apis` (plural), not `jentic api` (singular).
 
 ### 2. View API Details
 
@@ -54,7 +54,22 @@ Authorization: Bearer <token>
 
 This provides overview information about the API including its current revision.
 
-### 3. List Operations for the Target API
+**Important:** The full `vendor/name/version` identifier is required. Omitting the version (e.g., `jentic apis show vendor/name`) will fail with "invalid API reference" error.
+
+### 3. Check Security Schemes
+
+The `jentic apis show` command includes a `security_schemes` field in its output. However, this field is often empty even when the API requires authentication.
+
+**CLI:**
+```bash
+jentic apis show <vendor>/<name>/<version> --output json
+```
+
+Look for the `security_schemes` array in the JSON output. If empty, authentication requirements cannot be determined from this metadata alone.
+
+**Known limitation:** Security scheme information is frequently not populated in API metadata, even for APIs that require authentication (e.g., X-API-Key headers). You will need to consult the OpenAPI spec (step 5) or external documentation to determine actual authentication requirements.
+
+### 4. List Operations for the Target API
 
 List the API's operations to see available endpoints.
 
@@ -79,7 +94,7 @@ Expected response includes operation objects with:
 
 **Note:** If this returns 0 operations or an empty list, the API may be registered but not yet have operations defined in its current revision.
 
-### 4. Inspect Individual Operations
+### 5. Inspect Individual Operations
 
 Get detailed information about a specific operation using its operation ID.
 
@@ -96,11 +111,11 @@ Authorization: Bearer <token>
 
 This shows operation details including method, path, and an `auth` field. 
 
-**Important Limitation:** The `auth` field may show `null` even when the API requires authentication. The operation metadata does not reliably expose authentication requirements. You may need to consult the OpenAPI spec (step 5) or external documentation.
+**Important Limitation:** The `auth` field may show `null` even when the API requires authentication. The operation metadata does not reliably expose authentication requirements. You may need to consult the OpenAPI spec (step 6) or external documentation.
 
 **Note:** The `jentic inspect` command (without `apis` subcommand) may also work but `jentic apis inspect` is the correct form for operation inspection.
 
-### 5. Attempt to Retrieve the OpenAPI Specification
+### 6. Attempt to Retrieve the OpenAPI Specification
 
 Try to get the full OpenAPI spec to understand authentication requirements and request/response schemas.
 
@@ -117,7 +132,7 @@ Authorization: Bearer <token>
 
 **Note:** This may fail with HTTP 500 if the spec file wasn't stored during API registration. The error message will indicate "Revision '<id>' has no stored spec file". If this occurs, authentication requirements cannot be discovered through the platform and must be obtained from external documentation or the API provider.
 
-### 6. Check Catalog for Published Information
+### 7. Check Catalog for Published Information
 
 If direct API inspection is limited, check if the API is published in the public catalog with documentation.
 
@@ -134,7 +149,7 @@ Authorization: Bearer <token>
 
 This shows APIs that have been explicitly published with descriptions and may include authentication guidance.
 
-### 7. Verify Current Toolkit Access
+### 8. Verify Current Toolkit Access
 
 Check whether you already have access to a toolkit containing credentials for this API.
 
@@ -149,6 +164,8 @@ GET {{ platform.control_plane_url }}/toolkits
 Authorization: Bearer <token>
 ```
 
+**Note:** The `jentic toolkits` command may not be available in all CLI versions. If you receive "unknown command" error, skip this step and proceed to request access (covered in separate skill documentation). You can verify access after requesting it through other means.
+
 If the response is empty or doesn't include the target API, you'll need to request access (covered in separate skill documentation).
 
 ## Quick Reference
@@ -160,6 +177,9 @@ jentic apis list
 
 # Show API details
 jentic apis show <vendor>/<name>/<version>
+
+# Show API details with JSON output (to see security_schemes)
+jentic apis show <vendor>/<name>/<version> --output json
 
 # List operations for specific API
 jentic apis operations <vendor>/<name>/<version>
@@ -173,7 +193,7 @@ jentic apis spec <vendor>/<name>/<version>
 # Check catalog
 jentic catalog
 
-# Check toolkit access
+# Check toolkit access (may not be available)
 jentic toolkits
 ```
 
@@ -192,14 +212,16 @@ All HTTP requests require `Authorization: Bearer <token>` header.
 
 ## Pitfalls
 
-- **Don't use partial API identifiers**: Commands like `jentic apis <vendor>/<name>` without version will fail with "invalid API reference" error. Always use the full `vendor/name/version` format.
+- **Don't use singular "api"**: The command is `jentic apis` (plural), not `jentic api`. Using the singular form will result in "unknown command" error.
+- **Don't use partial API identifiers**: Commands like `jentic apis show <vendor>/<name>` without version will fail with "invalid API reference" error. Always use the full `vendor/name/version` format.
 - **Don't use unknown flags**: The `jentic apis operations` command does not accept an `--api` flag. The API identifier is passed as a positional argument.
 - **Search functionality may be unreliable**: The `jentic search` command may return empty results or HTTP 422 errors even for valid queries. Prefer direct listing commands like `jentic apis list` and `jentic apis show`.
 - **Operation IDs are hidden in formatted output**: Use `--output json` with CLI commands to see the full operation object including the `id` field needed for execution.
 - **Spec retrieval may fail**: If `jentic apis spec` returns HTTP 500 with message "Revision '<id>' has no stored spec file", the API was registered without storing its OpenAPI specification. Fall back to operation listing and inspection, but be aware that authentication requirements may not be discoverable.
-- **Authentication requirements may not be visible**: The operation `auth` field often shows `null` even when authentication is required. If spec retrieval fails, you cannot reliably discover authentication requirements through the platform. Consult external documentation or the API provider.
+- **Authentication requirements are often not visible**: The `security_schemes` field in API metadata is frequently empty, and the operation `auth` field often shows `null` even when authentication is required. If spec retrieval fails, you cannot reliably discover authentication requirements through the platform. Consult external documentation or the API provider.
 - **Path-based operation lookup is fragile**: Commands like `jentic inspect 'GET /path'` may fail to find operations. Always use the operation ID from `jentic apis operations`.
 - **Empty operations list**: An API may be registered but show 0 operations if its current revision has no operations defined. This is not an error, but indicates the API is not yet ready for use.
+- **"toolkits" command may not exist**: The `jentic toolkits` command may not be available in all CLI versions. If you get "unknown command" error, this is expected and you should skip that verification step.
 
 ## Verification
 
@@ -222,4 +244,4 @@ GET {{ platform.control_plane_url }}/apis/operations?api=<vendor>/<name>/<versio
 ```
 Should return 200 status with operation array in response body.
 
-**Note:** If authentication requirements are critical and cannot be discovered through the platform (spec retrieval failed and operation metadata shows `auth: null`), you must obtain this information from external sources before proceeding to request access or execute operations.
+**Note:** If authentication requirements are critical and cannot be discovered through the platform (spec retrieval failed, `security_schemes` is empty, and operation metadata shows `auth: null`), you must obtain this information from external sources before proceeding to request access or execute operations.

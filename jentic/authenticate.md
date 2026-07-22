@@ -1,7 +1,8 @@
+```markdown
 ---
 name: authenticate
 description: Exchange credentials for an access token (JWT bearer or CLI login) to access the Jentic platform
-version: 2
+version: 3
 ---
 
 # Authenticate with Jentic Platform
@@ -43,7 +44,7 @@ Test that your access token is valid by making an authenticated request.
 
 **CLI:**
 ```bash
-jentic apis
+jentic apis list
 ```
 
 If this returns a list of APIs (even if empty), your token is valid.
@@ -53,7 +54,7 @@ You can also check your profile and token status:
 jentic profile list
 ```
 
-This shows your active profile with token expiry information and validation status.
+This shows your active profile with token expiry information (typically 1 hour) and validation status.
 
 **HTTP:**
 ```
@@ -94,7 +95,7 @@ Response contains new `access_token` and `expires_in`. Store the new access toke
 jentic register --name <agent-name>
 
 # Verify authentication
-jentic apis
+jentic apis list
 
 # Check profile and token status
 jentic profile list
@@ -124,20 +125,21 @@ Body: { "refresh_token": "<token>" }
 - **Refresh after toolkit changes**: After requesting toolkit access, run `jentic refresh` to update your token with new credential claims. The old token won't include newly granted permissions.
 - **Token expiration**: Access tokens expire. If you get 401 errors, refresh your token before retrying.
 - **Refresh token lifetime**: Refresh tokens also expire (longer lifetime than access tokens). If refresh fails, you'll need to re-register.
+- **Command naming**: Use `jentic apis` (plural) not `jentic api`. The CLI will suggest corrections for typos.
 
 ## Verification
 
 ### CLI
 Run any authenticated command successfully:
 ```bash
-jentic apis
+jentic apis list
 # Should return API list or empty array, not authentication error
 ```
 
 Or check your profile status:
 ```bash
 jentic profile list
-# Should show active profile with valid token and expiry time
+# Should show active profile with valid token and expiry time (typically 1h)
 ```
 
 ### HTTP
@@ -155,3 +157,4 @@ Success indicators:
 Failure indicators:
 - HTTP 401: Token invalid or expired (refresh needed)
 - HTTP 403: Token valid but lacks permissions (check registration status)
+```

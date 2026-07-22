@@ -1,7 +1,8 @@
+```markdown
 ---
 name: add-to-toolkit
 description: Request access to a toolkit containing API credentials so you can make proxied requests through the broker
-version: 2
+version: 3
 ---
 
 # Request Toolkit Access
@@ -47,7 +48,7 @@ Submit an access request for the toolkit containing the credential you need.
 jentic access request --toolkit <vendor>/<toolkit-name> --wait
 ```
 
-The `--wait` flag causes the command to poll until the request is approved or denied.
+The `--wait` flag causes the command to poll until the request is approved or denied. This is recommended for auto-approved toolkits or when you expect quick manual approval.
 
 **Optional flags:**
 - `--reason "Your reason text"` - Provide a reason for the access request (helpful for manual approval workflows)
@@ -104,6 +105,11 @@ Confirm the toolkit is now bound to your agent.
 jentic access list
 ```
 
+You can also verify your current identity and active toolkit bindings with:
+```bash
+jentic whoami
+```
+
 **HTTP:**
 ```
 GET {{ platform.control_plane_url }}/agent/access
@@ -120,6 +126,9 @@ Authorization: Bearer <your_refreshed_token>
 ```bash
 # List current access
 jentic access list
+
+# Verify identity and active bindings
+jentic whoami
 
 # Request toolkit access (wait for approval)
 jentic access request --toolkit <vendor>/<toolkit-name> --wait
@@ -149,6 +158,7 @@ POST   {{ platform.control_plane_url }}/agent/token/refresh
 - **Not using `--wait` flag**: Without `--wait`, the CLI returns immediately and you must manually poll for approval status. Use `--wait` for auto-approved toolkits or when you expect quick manual approval.
 - **Using stale token after refresh**: In HTTP mode, ensure you replace your stored token with the refreshed one. The old token won't include the new toolkit binding.
 - **Assuming immediate access**: Some toolkits require manual approval. Check the request status if `--wait` times out or the HTTP request returns a pending status.
+- **No direct toolkit listing command**: The CLI does not have a `jentic toolkits list` command. To discover available toolkits, you typically need to know the toolkit reference from documentation or use `jentic apis list` to find APIs and then request access using the API's vendor/name format.
 
 ## Verification
 
@@ -157,6 +167,12 @@ POST   {{ platform.control_plane_url }}/agent/token/refresh
 jentic access list
 ```
 Look for the toolkit binding in the output. You should see an entry with a toolkit ID (e.g., `tk_...`) matching your requested toolkit.
+
+You can also use:
+```bash
+jentic whoami
+```
+This shows your current identity and active toolkit bindings.
 
 ### HTTP
 ```
@@ -173,3 +189,4 @@ jentic execute <operation_id>
 If the toolkit binding is correct, the broker will inject the credential and proxy your request. A successful response (even if it's an application error from the upstream API) confirms the toolkit is properly bound.
 
 **Note:** The Jentic broker blocks requests to localhost and other restricted addresses (e.g., 127.0.0.1) as a security measure. If you receive an error about restricted addresses, this is expected behavior and not a configuration issue with your toolkit binding.
+```
