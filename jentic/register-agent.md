@@ -2,7 +2,7 @@
 ---
 name: register-agent
 description: Register a new agent identity on the Jentic platform and obtain authentication credentials
-version: 3
+version: 4
 ---
 
 # Register Agent Identity
@@ -71,6 +71,8 @@ The CLI automatically saves credentials to `.jentic/profiles/default` in your ho
 - Token expiry information
 - Next steps for using the platform
 
+**Note:** In some cases, the profile may be created but token minting may fail during the registration flow. If this occurs, see the "Token Minting Failure" section in Pitfalls below.
+
 **HTTP:**
 Extract and securely store the following from the approval response:
 - `agent_id`: Your unique agent identifier
@@ -113,6 +115,9 @@ jentic agents list
 
 # Check current authentication status
 jentic agents list  # Your agent should appear in the list
+
+# Log out (clears profile)
+jentic logout
 ```
 
 ### HTTP Endpoints
@@ -143,7 +148,17 @@ Authorization: Bearer <refresh-token>
 
 - **No `whoami` command**: There is no `jentic whoami` command. Use `jentic agents list` to see your agent identity.
 
+- **No `auth` command**: There is no `jentic auth` command. Authentication is handled automatically during registration. If you need to re-authenticate, use `jentic logout` followed by `jentic register`.
+
 - **Authentication is automatic**: After successful registration with the CLI, you are immediately authenticated. There is no separate authentication step required - the registration process handles credential storage and you can immediately proceed to use other commands like `jentic apis list` or `jentic access request`.
+
+- **Token minting failure**: In rare cases, the agent may be created and approved but the automatic token minting step may fail (e.g., "EOF" error when calling `/oauth/token`). If this occurs:
+  1. Check if the profile was created: look for `.jentic/profiles/default`
+  2. If the profile exists but has no token, try running `jentic logout` followed by `jentic register --yes` again
+  3. Running `jentic register` again with an existing agent will attempt to re-use the agent and complete the token minting process
+  4. If the problem persists, the OAuth token endpoint may be unavailable or misconfigured
+
+- **Re-running register with existing agent**: If you run `jentic register` and an agent profile already exists, the CLI will display "Using existing agent_id=..." and show the approval URL. This can be used to recover from partial registration failures.
 
 ## Verification
 
@@ -163,4 +178,11 @@ Make a request to `GET {{ platform.control_plane_url }}/v1/agents/me` and confir
 - CLI: Check that `.jentic/profiles/default` exists and contains token data
 - HTTP: Verify you can make authenticated requests to other endpoints (e.g., `GET /v1/apis`)
 - Both: Confirm that unauthenticated requests to protected endpoints return 401 Unauthorized
+
+### Troubleshooting Failed Registration
+If `jentic agents list` fails with authentication errors after registration:
+1. Check if `.jentic/profiles/default` exists
+2. Inspect the profile file to verify it contains token data
+3. If the profile exists but has no token, this indicates a token minting failure
+4. Try `jentic logout` followed by `jentic register --yes` to retry the full flow
 ```

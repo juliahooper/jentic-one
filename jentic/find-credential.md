@@ -1,7 +1,7 @@
 ---
 name: find-credential
 description: Locate an API in the platform registry and identify its authentication requirements and available endpoints
-version: 3
+version: 4
 ---
 
 # Finding API Credentials and Endpoints
@@ -15,6 +15,8 @@ Use this skill when you need to discover what authentication method a registered
 - Valid agent identity registered with the platform
 - Active authentication token
 - Knowledge of the API's vendor/name/version identifier (format: `vendor/name/version`)
+
+**Important:** You must have a valid authentication token before using any of the commands in this skill. If you encounter authentication errors or have no token, complete agent registration and authentication first (see separate skill documentation).
 
 ## Procedure
 
@@ -215,6 +217,7 @@ All HTTP requests require `Authorization: Bearer <token>` header.
 - **Don't use singular "api"**: The command is `jentic apis` (plural), not `jentic api`. Using the singular form will result in "unknown command" error.
 - **Don't use partial API identifiers**: Commands like `jentic apis show <vendor>/<name>` without version will fail with "invalid API reference" error. Always use the full `vendor/name/version` format.
 - **Don't use unknown flags**: The `jentic apis operations` command does not accept an `--api` flag. The API identifier is passed as a positional argument.
+- **Don't use "auth" command**: There is no `jentic auth` command. Authentication is handled through the `jentic register` and profile management system. If you see "unknown command 'auth'" error, you're using an invalid command.
 - **Search functionality may be unreliable**: The `jentic search` command may return empty results or HTTP 422 errors even for valid queries. Prefer direct listing commands like `jentic apis list` and `jentic apis show`.
 - **Operation IDs are hidden in formatted output**: Use `--output json` with CLI commands to see the full operation object including the `id` field needed for execution.
 - **Spec retrieval may fail**: If `jentic apis spec` returns HTTP 500 with message "Revision '<id>' has no stored spec file", the API was registered without storing its OpenAPI specification. Fall back to operation listing and inspection, but be aware that authentication requirements may not be discoverable.
@@ -222,6 +225,7 @@ All HTTP requests require `Authorization: Bearer <token>` header.
 - **Path-based operation lookup is fragile**: Commands like `jentic inspect 'GET /path'` may fail to find operations. Always use the operation ID from `jentic apis operations`.
 - **Empty operations list**: An API may be registered but show 0 operations if its current revision has no operations defined. This is not an error, but indicates the API is not yet ready for use.
 - **"toolkits" command may not exist**: The `jentic toolkits` command may not be available in all CLI versions. If you get "unknown command" error, this is expected and you should skip that verification step.
+- **Must be authenticated first**: All commands in this skill require a valid authentication token. If you don't have a token or your agent registration is incomplete, you must complete authentication before attempting to discover APIs. See agent registration and authentication skill documentation.
 
 ## Verification
 

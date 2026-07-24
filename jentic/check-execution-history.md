@@ -1,7 +1,7 @@
 ---
 name: check-execution-history
 description: Query execution records to verify that proxied API requests were logged by the platform
-version: 1
+version: 2
 ---
 
 # Check Execution History
@@ -24,10 +24,23 @@ The platform logs all proxied requests made through the broker. Query the execut
 
 **CLI:**
 
-There is no dedicated CLI command for listing execution history. You must use `curl` or similar HTTP client with your bearer token:
+There is no dedicated CLI command for listing execution history. You must use `curl` or similar HTTP client with your bearer token.
+
+**Note:** The CLI does not have an `auth` subcommand. To get your token, use:
 
 ```bash
-curl -H "Authorization: Bearer $(jentic auth token)" \
+# Get token from profile (if available)
+jentic profile show
+
+# Or retrieve token manually via HTTP
+curl -X POST {{ platform.control_plane_url }}/agents/<agent_id>:mint-token \
+  -H "Content-Type: application/json"
+```
+
+Once you have your token, query executions:
+
+```bash
+curl -H "Authorization: Bearer <your_token>" \
   {{ platform.control_plane_url }}/executions
 ```
 
@@ -73,7 +86,7 @@ Each execution record contains:
 Use `jq` or similar tools to filter and format the results:
 
 ```bash
-curl -s -H "Authorization: Bearer $(jentic auth token)" \
+curl -s -H "Authorization: Bearer <your_token>" \
   {{ platform.control_plane_url }}/executions | jq '.[] | {id, timestamp, status}'
 ```
 
@@ -94,7 +107,7 @@ To confirm a specific proxied request was logged:
 
 ```bash
 # Filter by recent executions (last hour example)
-curl -s -H "Authorization: Bearer $(jentic auth token)" \
+curl -s -H "Authorization: Bearer <your_token>" \
   {{ platform.control_plane_url }}/executions | \
   jq '[.[] | select(.timestamp > (now - 3600 | todate))]'
 ```
@@ -109,11 +122,11 @@ Apply client-side filtering to the JSON array returned from `GET /executions`. T
 
 ```bash
 # View all executions (no dedicated CLI command exists)
-curl -H "Authorization: Bearer $(jentic auth token)" \
+curl -H "Authorization: Bearer <your_token>" \
   {{ platform.control_plane_url }}/executions
 
-# Get current token for manual API calls
-jentic auth token
+# Get agent profile info (includes agent_id, may include token)
+jentic profile show
 ```
 
 ### HTTP Endpoints
@@ -128,10 +141,11 @@ GET /executions
 ## Pitfalls
 
 - **No CLI command exists**: Unlike other platform features, there is no `jentic executions list` or similar command. You must construct HTTP requests manually.
+- **No `jentic auth` command**: The CLI does not have an `auth` subcommand. Use `jentic profile show` to view your agent profile and token (if available), or mint a token via the HTTP API.
+- **Token may not be automatically minted**: After registration, the token may not be immediately available. If `jentic profile show` shows no token, you may need to mint one manually via `POST /agents/<agent_id>:mint-token` or re-run `jentic register`.
 - **Empty results don't mean failure**: An empty array `[]` is the expected response if no proxied requests have been successfully executed. This could be because requests were blocked by policy (e.g., localhost restrictions) or because you haven't made any proxied requests yet.
 - **Blocked requests may not appear**: If the broker blocks a request due to policy violations (e.g., restricted destination addresses), check whether these appear with `status: "blocked"` or are omitted entirely from the execution log.
 - **No server-side filtering**: The `/executions` endpoint returns all execution records for your agent. You must filter client-side by timestamp, operation, or status.
-- **Token refresh needed**: If you recently gained new toolkit access, ensure you've refreshed your token (`jentic auth token` automatically handles this) before making proxied requests.
 
 ## Verification
 
@@ -146,7 +160,7 @@ GET /executions
 
 ```bash
 # Should return 200 and valid JSON array
-curl -i -H "Authorization: Bearer $(jentic auth token)" \
+curl -i -H "Authorization: Bearer <your_token>" \
   {{ platform.control_plane_url }}/executions
 ```
 

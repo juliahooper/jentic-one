@@ -2,7 +2,7 @@
 ---
 name: make-proxied-request
 description: Make authenticated API requests through the Jentic broker using toolkit credentials
-version: 3
+version: 4
 ---
 
 # Making Proxied API Requests Through Jentic
@@ -20,6 +20,30 @@ Use this skill when you need to call an external API through Jentic's broker, wh
 - Target API must be accessible from the broker (not localhost/private IP ranges in production environments)
 
 ## Procedure
+
+### 0. Agent Registration and Authentication (If Not Already Completed)
+
+Before you can make proxied requests, you must have a registered agent with a valid authentication token.
+
+**CLI:**
+
+Register a new agent:
+```bash
+jentic register --yes
+```
+
+The `--yes` flag auto-approves the registration in development environments. Without it, you'll need to manually approve the agent via the console URL provided in the output.
+
+**Important:** The CLI does not have an `auth` command. Authentication is handled automatically during registration. If registration completes but token minting fails (indicated by an EOF error or exit code 1), try running `jentic register` again. The CLI will detect the existing agent and attempt to complete the authentication process.
+
+Check your profile status:
+```bash
+jentic profile show
+```
+
+This displays your agent_id and token status. If you see a profile but no token, re-run `jentic register` to complete the authentication.
+
+**Expected outcome:** You should have a profile with an active authentication token. The `jentic profile show` command should display your agent_id and confirm token presence.
 
 ### 1. Locate the Target API in the Registry
 
@@ -177,6 +201,8 @@ The response status and body reflect the upstream API's response. Broker errors 
 
 ### CLI Commands
 ```bash
+jentic register --yes                               # Register agent with auto-approval
+jentic profile show                                 # Check agent profile and token status
 jentic apis list                                    # List available APIs (note: plural "apis")
 jentic apis show <vendor>/<name>/<version>          # Show API details
 jentic apis inspect <operation_id>                  # Inspect specific operation
@@ -199,6 +225,12 @@ GET  /executions                                    # View execution history
 ```
 
 ## Pitfalls
+
+- **No "auth" command in CLI**: The CLI does not have a `jentic auth` command for initial authentication. Authentication happens during the `jentic register` process. If you see "unknown command 'auth'" error, you're trying to use a command that doesn't exist. Use `jentic register` for initial setup and `jentic auth refresh` or `jentic auth status` for token management after registration.
+
+- **Registration may fail to mint token**: The `jentic register` command may complete registration (creating the agent) but fail during token minting with an EOF error or exit code 1. If `jentic profile show` displays an agent_id but no token, re-run `jentic register`. The CLI will detect the existing agent and attempt to complete the authentication process.
+
+- **Exit code 137 during registration**: If registration is interrupted with exit code 137, the agent may be created but not fully authenticated. Check status with `jentic profile show` and re-run `jentic register` if needed.
 
 - **Command is "apis" not "api"**: The CLI command is `jentic apis` (plural). Using `jentic api` will result in "unknown command" error with a suggestion to use `apis`.
 
@@ -226,6 +258,10 @@ GET  /executions                                    # View execution history
 
 **CLI:**
 ```bash
+# Verify agent registration and token
+jentic profile show
+# Should show agent_id and confirm token is present
+
 # Verify toolkit binding
 jentic auth status
 # Should show your toolkit in the bindings list
@@ -254,5 +290,5 @@ GET {{ platform.control_plane_url }}/executions
 # Returns array of execution records
 ```
 
-Success means: (1) your token includes the toolkit binding, (2) the execute command/endpoint returns a response, (3) the response is from the upstream API (not a broker error), and (4) the status indicates success per the API's contract.
+Success means: (1) your agent is registered with a valid token, (2) your token includes the toolkit binding, (3) the execute command/endpoint returns a response, (4) the response is from the upstream API (not a broker error), and (5) the status indicates success per the API's contract.
 ```

@@ -1,7 +1,7 @@
 ---
 name: view-audit-events
 description: Access and browse the platform audit log to review agent activity and system events
-version: 1
+version: 2
 ---
 
 # View Audit Events
@@ -15,6 +15,7 @@ Use this skill when you need to review your agent's activity history, investigat
 - Active agent registration with the platform
 - Valid authentication token with `events:read` scope (granted by default to agents)
 - Access to the platform control plane API
+- **Important**: You must have a valid token minted and stored. If registration completed but token minting failed, you may need to re-register or manually authenticate before accessing events.
 
 ## Procedure
 
@@ -32,6 +33,11 @@ The `jentic` CLI stores tokens automatically after authentication. The token is 
 cat ~/.config/jentic/tokens.json
 ```
 
+⚠️ **Token Availability**: If you recently registered and the token file is empty or missing the `token` field, the automatic token minting may have failed. You may need to:
+- Re-run `jentic register` to retry the registration and token minting process
+- Ensure the agent is approved in the console before the token can be minted
+- Check that the registration process completed successfully without EOF or timeout errors
+
 **HTTP:**
 
 Your token was provided during the authentication flow. It should be stored securely by your agent. The token is used in the `Authorization` header as a Bearer token.
@@ -42,7 +48,7 @@ The platform exposes audit events through the `/events` endpoint on the control 
 
 **CLI:**
 
-⚠️ **Important**: The `jentic` CLI does not currently provide a built-in command for viewing events (e.g., `jentic events list`). You must make a direct HTTP request to the control plane API.
+⚠️ **Important**: The `jentic` CLI does not currently provide a built-in command for viewing events (e.g., `jentic events list` or `jentic auth`). You must make a direct HTTP request to the control plane API.
 
 ```bash
 # Extract token and make direct API call
@@ -122,7 +128,7 @@ Review the returned events to find relevant activity. Key fields to examine:
 ### CLI Commands
 
 ```bash
-# No native CLI command available
+# No native CLI command available (jentic auth does not exist)
 # Use direct API access:
 TOKEN=$(cat ~/.config/jentic/tokens.json | jq -r '.token')
 curl -H "Authorization: Bearer $TOKEN" {{ platform.control_plane_url }}/events
@@ -138,11 +144,15 @@ GET /events?type=<event_type>  # Filter by type
 
 ## Pitfalls
 
-- **No CLI command**: The `jentic` CLI does not provide a native command for viewing events. You must make direct HTTP requests to the control plane API, even when using CLI mode for other operations.
+- **No CLI command**: The `jentic` CLI does not provide a native command for viewing events. Commands like `jentic events list` or `jentic auth` do not exist. You must make direct HTTP requests to the control plane API, even when using CLI mode for other operations.
 
 - **Wrong endpoint**: Do not confuse `/events` with `/audit`. The `/audit` endpoint requires `audit:read` scope which agents typically do not have by default. Use `/events` for agent activity logs.
 
 - **Token extraction**: When using CLI mode, you need to manually extract the token from the CLI's storage location (typically `~/.config/jentic/tokens.json`) to make direct API calls.
+
+- **Missing or empty token**: If registration completed but token minting failed (e.g., due to EOF errors, timeouts, or approval issues), the tokens.json file may exist but contain no valid token. Check that the file contains a `token` field with a non-empty value before attempting to use it.
+
+- **Registration state issues**: If registration shows `status=pending` and token minting fails, the agent may be created but not approved. You may need to manually approve the agent in the console or re-run registration after approval.
 
 - **Missing Authorization header**: The events endpoint requires authentication. Always include `Authorization: Bearer <token>` in your HTTP requests.
 
@@ -168,3 +178,9 @@ GET /events?type=<event_type>  # Filter by type
 - **401 Unauthorized**: Token is missing, invalid, or expired
 - **403 Forbidden**: Token lacks `events:read` scope
 - **404 Not Found**: Wrong endpoint URL (check you're using `/events` not `/audit`)
+
+**Before attempting to view events:**
+
+1. Verify your token exists: `cat ~/.config/jentic/tokens.json | jq -r '.token'`
+2. Ensure the output is not empty or `null`
+3. If token is missing, complete registration and approval process first
