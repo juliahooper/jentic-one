@@ -1,7 +1,7 @@
 ---
 name: find-credential
 description: Locate an API in the platform registry and identify its authentication requirements and available endpoints
-version: 5
+version: 6
 ---
 
 # Finding API Credentials and Endpoints
@@ -19,6 +19,8 @@ Use this skill when you need to discover what authentication method a registered
 **Important:** You must have a valid authentication token before using any of the commands in this skill. If you encounter authentication errors or have no token, complete agent registration and authentication first (see separate skill documentation).
 
 **Note on agent registration:** After registering a new agent, you will receive a pending status and a link to approve it in the Jentic console. Token exchange may fail immediately after registration — this is normal. Wait 10-15 seconds for background approval to complete, then retry token exchange before proceeding with API discovery.
+
+**Note on token storage:** After successful token exchange, tokens are stored in `tokens.json` in your profile directory. If you copy a profile from another agent or workspace, ensure `tokens.json` is also copied to maintain authentication state.
 
 ## Procedure
 
@@ -206,7 +208,7 @@ jentic toolkits
 GET /apis                                    # List APIs
 GET /apis/<vendor>/<name>/<version>          # Show API details
 GET /apis/operations?api=<vendor/name/ver>   # List operations
-GET /operations/<operation-id>               # Inspect operation
+GET /operations/<operation-id>                # Inspect operation
 GET /apis/<vendor>/<name>/<version>/spec     # Get spec
 GET /catalog                                 # Public catalog
 GET /toolkits                                # Current access
@@ -229,6 +231,7 @@ All HTTP requests require `Authorization: Bearer <token>` header.
 - **"toolkits" command may not exist**: The `jentic toolkits` command may not be available in all CLI versions. If you get "unknown command" error, this is expected and you should skip that verification step.
 - **Must be authenticated first**: All commands in this skill require a valid authentication token. If you don't have a token or your agent registration is incomplete, you must complete authentication before attempting to discover APIs. See agent registration and authentication skill documentation.
 - **Token exchange may fail immediately after registration**: After registering a new agent, the initial token exchange attempt may fail even though registration succeeded. This is normal — wait 10-15 seconds for background approval to complete, then retry the token exchange before proceeding with API discovery.
+- **Token storage is profile-specific**: Tokens are stored in `tokens.json` within your profile directory. If you switch profiles or copy a profile to a new location, ensure `tokens.json` is also copied. If `tokens.json` is missing, you will need to re-authenticate even if your agent is approved.
 
 ## Verification
 

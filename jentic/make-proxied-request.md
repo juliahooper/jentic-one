@@ -2,7 +2,7 @@
 ---
 name: make-proxied-request
 description: Make authenticated API requests through the Jentic broker using toolkit credentials
-version: 5
+version: 6
 ---
 
 # Making Proxied API Requests Through Jentic
@@ -34,7 +34,13 @@ jentic register --yes
 
 The `--yes` flag auto-approves the registration in development environments. Without it, you'll need to manually approve the agent via the console URL provided in the output.
 
-**Important:** The CLI does not have an `auth` command. Authentication is handled automatically during registration. If registration completes but token minting fails (indicated by an EOF error or exit code 1), the agent has been created but approval is still pending. Wait 10-15 seconds for background approval to complete, then try running `jentic register` again. The CLI will detect the existing agent and attempt to complete the authentication process.
+**Important:** The CLI does not have a `jentic auth` command for initial authentication. Authentication is handled automatically during registration. If registration completes but token minting fails (indicated by an exit code 1 error or "agent for profile is not active yet" message), the agent has been created but approval is still pending. 
+
+**Recovery steps:**
+1. Wait 10-15 seconds for background approval to complete
+2. Re-run `jentic register` to attempt token minting again
+3. The CLI will detect the existing agent and attempt to complete the authentication process
+4. If the error persists, manually approve the agent via the console URL shown in the registration output, then re-run `jentic register`
 
 Check your profile status:
 ```bash
@@ -247,9 +253,9 @@ GET  /executions                                    # View execution history
 
 ## Pitfalls
 
-- **No "auth" command in CLI**: The CLI does not have a `jentic auth` command for initial authentication. Authentication happens during the `jentic register` process. If you see "unknown command 'auth'" error, you're trying to use a command that doesn't exist. Use `jentic register` for initial setup and `jentic auth refresh` or `jentic auth status` for token management after registration.
+- **No "auth" command in CLI for initial setup**: The CLI does not have a `jentic auth` command for initial authentication. Authentication happens during the `jentic register` process. If you see "unknown command 'auth'" error, you're trying to use a command that doesn't exist. Use `jentic register` for initial setup and `jentic auth refresh` or `jentic auth status` for token management after registration.
 
-- **Registration may fail to mint token with exit code 1**: The `jentic register` command may complete registration (creating the agent) but fail during token minting with an exit code 1 error. This typically means the agent is created but approval is still pending. Wait 10-15 seconds for background approval to complete, then re-run `jentic register`. The CLI will detect the existing agent and attempt to complete the authentication process. If `jentic profile show` displays an agent_id but no token, re-run `jentic register` to complete the authentication.
+- **Registration may fail to mint token with exit code 1**: The `jentic register` command may complete registration (creating the agent) but fail during token minting with an exit code 1 error or "agent for profile is not active yet" message. This typically means the agent is created but approval is still pending. Wait 10-15 seconds for background approval to complete, then re-run `jentic register`. The CLI will detect the existing agent and attempt to complete the authentication process. If `jentic profile show` displays an agent_id but no token, re-run `jentic register` to complete the authentication. If the error persists, manually approve the agent via the console URL provided in the registration output.
 
 - **Exit code 137 during registration**: If registration is interrupted with exit code 137, the agent may be created but not fully authenticated. Check status with `jentic profile show` and re-run `jentic register` if needed.
 

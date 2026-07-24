@@ -2,7 +2,7 @@
 ---
 name: add-to-toolkit
 description: Request access to a toolkit containing API credentials so you can make proxied requests through the broker
-version: 5
+version: 6
 ---
 
 # Request Toolkit Access
@@ -22,6 +22,7 @@ Use this skill when you need to execute operations against an API that requires 
 1. You approved the agent in the console (you'll see a URL like `http://<platform>/app/agents/<agent_id>`)
 2. You waited for background approval to complete (typically 10-15 seconds after approval)
 3. The token exchange succeeded after approval
+4. The token was stored in your local `tokens.json` file (typically in your Jentic profile directory)
 
 See the agent registration skill documentation for troubleshooting registration issues.
 
@@ -49,6 +50,7 @@ Authorization: Bearer <your_agent_token>
 **If this fails with authentication errors:**
 - Verify you have a valid token with `jentic whoami`
 - If no token is present, check that your agent registration was approved in the console and the token exchange completed
+- Confirm the token was persisted to your local `tokens.json` file (the CLI stores tokens here after successful approval)
 - The CLI does not have a `jentic auth` command; authentication is handled through the registration process
 
 ### 2. Request Toolkit Access
@@ -97,6 +99,8 @@ After approval, refresh your authentication token to receive updated claims that
 jentic access refresh
 ```
 
+This command updates your local `tokens.json` file with the new token containing the toolkit binding claims.
+
 **HTTP:**
 ```
 POST {{ platform.control_plane_url }}/agent/token/refresh
@@ -105,7 +109,7 @@ Authorization: Bearer <your_current_token>
 
 **Expected Response:**
 - A new JWT token with updated toolkit bindings in its claims
-- The CLI automatically updates your stored token
+- The CLI automatically updates your stored token in `tokens.json`
 - For HTTP, store the new token and use it for subsequent requests
 
 ### 4. Verify Toolkit Binding
@@ -165,12 +169,13 @@ POST   {{ platform.control_plane_url }}/agent/token/refresh
 
 ## Pitfalls
 
-- **No valid authentication token**: If you attempt to request toolkit access without a valid token, commands will fail with authentication errors. Always verify you have a token with `jentic whoami` before proceeding. If registration shows pending status but no token was minted, ensure you approved the agent in the Jentic console and waited for background approval to complete (typically 10-15 seconds).
-- **Agent registration pending but not approved**: After running `jentic register`, the agent enters a pending state. You must approve it in the Jentic console (using the URL provided in the registration output) before a token is minted. Background approval typically takes 10-15 seconds after you approve it in the console.
+- **No valid authentication token**: If you attempt to request toolkit access without a valid token, commands will fail with authentication errors. Always verify you have a token with `jentic whoami` before proceeding. If registration shows pending status but no token was minted, ensure you approved the agent in the Jentic console and waited for background approval to complete (typically 10-15 seconds). Check that the token was persisted to your local `tokens.json` file.
+- **Agent registration pending but not approved**: After running `jentic register`, the agent enters a pending state. You must approve it in the Jentic console (using the URL provided in the registration output) before a token is minted. Background approval typically takes 10-15 seconds after you approve it in the console. The token is then stored in your local `tokens.json` file.
+- **Token not persisted locally**: Even after successful approval, if the token was not saved to your local `tokens.json` file, the CLI will not have access to it. Verify the token file exists in your Jentic profile directory and contains a valid token entry.
 - **Forgetting to refresh the token**: After a request is approved, you must refresh your agent token. The new toolkit binding is encoded in the JWT claims, not stored server-side per request.
 - **Wrong toolkit reference format**: Use `vendor/toolkit-name`, not `vendor/api-name` or `vendor/api-name/version`. Toolkits and APIs are separate entities.
 - **Not using `--wait` flag**: Without `--wait`, the CLI returns immediately and you must manually poll for approval status. Use `--wait` for auto-approved toolkits or when you expect quick manual approval.
-- **Using stale token after refresh**: In HTTP mode, ensure you replace your stored token with the refreshed one. The old token won't include the new toolkit binding.
+- **Using stale token after refresh**: In HTTP mode, ensure you replace your stored token with the refreshed one. The old token won't include the new toolkit binding. In CLI mode, verify the new token was written to `tokens.json`.
 - **Assuming immediate access**: Some toolkits require manual approval. Check the request status if `--wait` times out or the HTTP request returns a pending status.
 - **No direct toolkit listing command**: The CLI does not have a `jentic toolkits list` command. To discover available toolkits, you typically need to know the toolkit reference from documentation or use `jentic apis list` to find APIs and then request access using the API's vendor/name format.
 - **Looking for `jentic auth` command**: The CLI does not have a separate `jentic auth` command. Authentication is handled through the `jentic register` process and token management is done via `jentic access refresh`.

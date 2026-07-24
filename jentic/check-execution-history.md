@@ -1,7 +1,8 @@
+```markdown
 ---
 name: check-execution-history
 description: Query execution records to verify that proxied API requests were logged by the platform
-version: 3
+version: 4
 ---
 
 # Check Execution History
@@ -24,8 +25,9 @@ Before you can query execution history, your agent must be registered and approv
 1. Run `jentic register` to create a new agent
 2. The CLI will display a pending status and a console URL
 3. **An administrator must approve your agent** in the Jentic console before you can obtain a token
-4. After approval, run `jentic register` again or use `jentic profile show` to retrieve your token
+4. After approval, your token will be automatically stored in `tokens.json` in your agent workspace
 5. Approval may take 10–15 seconds; if your token is not immediately available, wait briefly and retry
+6. To verify approval is complete, run `jentic profile show` — if it displays a token, approval succeeded
 
 ## Procedure
 
@@ -37,16 +39,14 @@ The platform logs all proxied requests made through the broker. Query the execut
 
 There is no dedicated CLI command for listing execution history. You must use `curl` or similar HTTP client with your bearer token.
 
-**Note:** The CLI does not have an `auth` subcommand. To get your token, use:
+To get your token after agent approval:
 
 ```bash
-# Get token from profile (if available)
+# View your agent profile and token (if approved)
 jentic profile show
-
-# Or retrieve token manually via HTTP
-curl -X POST {{ platform.control_plane_url }}/agents/<agent_id>:mint-token \
-  -H "Content-Type: application/json"
 ```
+
+If `jentic profile show` does not display a token, your agent has not yet been approved. Wait 10–15 seconds and retry, or check the Jentic console to confirm approval status.
 
 Once you have your token, query executions:
 
@@ -136,7 +136,7 @@ Apply client-side filtering to the JSON array returned from `GET /executions`. T
 curl -H "Authorization: Bearer <your_token>" \
   {{ platform.control_plane_url }}/executions
 
-# Get agent profile info (includes agent_id, may include token)
+# Get agent profile info (includes agent_id and token after approval)
 jentic profile show
 
 # Register a new agent (requires admin approval before token is available)
@@ -150,19 +150,14 @@ GET /executions
   → Returns array of execution records for authenticated agent
   → Requires: Authorization: Bearer <token>
   → No query parameters currently supported
-
-POST /agents/<agent_id>:mint-token
-  → Mints a new token for an approved agent
-  → Requires: agent_id of an approved agent
 ```
 
 ## Pitfalls
 
 - **Agent must be approved before querying executions**: After running `jentic register`, your agent enters a pending state. An administrator must approve it in the Jentic console before you can obtain a token and query execution history. Attempting to query without an approved agent will result in a 401 error.
-- **Token availability delay**: After agent approval, the token may not be immediately available. If `jentic profile show` shows no token, wait 10–15 seconds and retry, or manually mint a token via `POST /agents/<agent_id>:mint-token`.
-- **No CLI command exists**: Unlike other platform features, there is no `jentic executions list` or similar command. You must construct HTTP requests manually.
-- **No `jentic auth` command**: The CLI does not have an `auth` subcommand. Use `jentic profile show` to view your agent profile and token (if available), or mint a token via the HTTP API.
-- **Token may not be automatically minted**: After registration, the token may not be immediately available. If `jentic profile show` shows no token, you may need to mint one manually via `POST /agents/<agent_id>:mint-token` or re-run `jentic register`.
+- **Token availability delay**: After agent approval, the token may not be immediately available. If `jentic profile show` shows no token, wait 10–15 seconds and retry. The token is automatically stored in `tokens.json` once approval completes.
+- **No CLI command exists**: Unlike other platform features, there is no `jentic executions list` or similar command. You must construct HTTP requests manually with `curl`.
+- **Verify approval completion**: Use `jentic profile show` to confirm your agent has been approved. If the output displays a token, approval is complete. If no token is shown, approval is still pending.
 - **Empty results don't mean failure**: An empty array `[]` is the expected response if no proxied requests have been successfully executed. This could be because requests were blocked by policy (e.g., localhost restrictions) or because you haven't made any proxied requests yet.
 - **Blocked requests may not appear**: If the broker blocks a request due to policy violations (e.g., restricted destination addresses), check whether these appear with `status: "blocked"` or are omitted entirely from the execution log.
 - **No server-side filtering**: The `/executions` endpoint returns all execution records for your agent. You must filter client-side by timestamp, operation, or status.
@@ -172,14 +167,18 @@ POST /agents/<agent_id>:mint-token
 **Success Criteria:**
 
 1. Your agent is registered and approved (visible in the Jentic console)
-2. The `/executions` endpoint returns HTTP 200 (not 401 or 403)
-3. If you made proxied requests, you see corresponding execution records with matching timestamps
-4. Each record contains the expected `operation_id` and `status` fields
-5. The `agent_id` in each record matches your authenticated agent identity
+2. `jentic profile show` displays your agent ID and token
+3. The `/executions` endpoint returns HTTP 200 (not 401 or 403)
+4. If you made proxied requests, you see corresponding execution records with matching timestamps
+5. Each record contains the expected `operation_id` and `status` fields
+6. The `agent_id` in each record matches your authenticated agent identity
 
 **CLI Verification:**
 
 ```bash
+# Verify agent is approved and token is available
+jentic profile show
+
 # Should return 200 and valid JSON array
 curl -i -H "Authorization: Bearer <your_token>" \
   {{ platform.control_plane_url }}/executions
@@ -188,3 +187,4 @@ curl -i -H "Authorization: Bearer <your_token>" \
 **HTTP Verification:**
 
 Check that `GET /executions` returns status 200 and a JSON array (even if empty). If you receive 401, your token may be expired, invalid, or your agent may not be approved. If you receive 404, verify the control plane URL is correct.
+```

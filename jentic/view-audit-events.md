@@ -1,7 +1,8 @@
+```markdown
 ---
 name: view-audit-events
 description: Access and browse the platform audit log to review agent activity and system events
-version: 3
+version: 4
 ---
 
 # View Audit Events
@@ -41,6 +42,10 @@ Approve this agent in the Jentic console:
 
 After approval completes, the token will be automatically stored in `~/.config/jentic/tokens.json`.
 
+**Troubleshooting registration:**
+- If you see `error: agent for profile "default" is not active yet`, the agent is still pending approval. Check the console approval page and wait 10-15 seconds.
+- If registration fails with EOF or timeout errors, the approval process may still be in progress. Wait a few seconds and retry `jentic register`.
+
 ### 2. Locate Your Authentication Token
 
 Once your agent is approved and registered, retrieve your bearer token for authentication.
@@ -59,6 +64,7 @@ cat ~/.config/jentic/tokens.json | jq -r '.token'
 - Wait 10-15 seconds after approval for background token minting to complete
 - Re-run `jentic register` to retry the registration and token minting process
 - Check that the registration process completed successfully without EOF or timeout errors
+- If the file exists but contains no valid token, the approval may not have completed. Return to Step 1 and verify approval status in the console.
 
 **HTTP:**
 
@@ -78,6 +84,8 @@ TOKEN=$(cat ~/.config/jentic/tokens.json | jq -r '.token')
 curl -H "Authorization: Bearer $TOKEN" \
      {{ platform.control_plane_url }}/events
 ```
+
+If the token extraction fails or returns `null`, verify the token file exists and contains a valid token before proceeding. See Step 2 troubleshooting.
 
 **HTTP:**
 
@@ -116,6 +124,7 @@ If the events list is large, you may need to filter by time range, event type, o
 
 ```bash
 # Add query parameters to the curl request
+TOKEN=$(cat ~/.config/jentic/tokens.json | jq -r '.token')
 curl -H "Authorization: Bearer $TOKEN" \
      "{{ platform.control_plane_url }}/events?limit=50&offset=0"
 ```
@@ -171,21 +180,23 @@ GET /events?type=<event_type>  # Filter by type
 
 ## Pitfalls
 
-- **Agent not approved**: Registration creates an agent with `status=pending`. Token minting only occurs **after** the agent is approved in the console. If you attempt to access events before approval, the token will not exist. Always check the console approval page and wait 10-15 seconds for background processing.
+- **Agent not approved**: Registration creates an agent with `status=pending`. Token minting only occurs **after** the agent is approved in the console. If you attempt to access events before approval, the token will not exist. Always check the console approval page and wait 10-15 seconds for background processing. If you see `error: agent for profile "default" is not active yet`, approval is still pending.
 
 - **No CLI command**: The `jentic` CLI does not provide a native command for viewing events. Commands like `jentic events list` or `jentic auth` do not exist. You must make direct HTTP requests to the control plane API, even when using CLI mode for other operations.
 
 - **Wrong endpoint**: Do not confuse `/events` with `/audit`. The `/audit` endpoint requires `audit:read` scope which agents typically do not have by default. Use `/events` for agent activity logs.
 
-- **Token extraction**: When using CLI mode, you need to manually extract the token from the CLI's storage location (typically `~/.config/jentic/tokens.json`) to make direct API calls.
+- **Token extraction**: When using CLI mode, you need to manually extract the token from the CLI's storage location (typically `~/.config/jentic/tokens.json`) to make direct API calls. Always verify the extracted token is not `null` before using it in requests.
 
-- **Missing or empty token**: If registration completed but token minting failed (e.g., due to EOF errors, timeouts, or approval issues), the tokens.json file may exist but contain no valid token. Check that the file contains a `token` field with a non-empty value before attempting to use it. Verify approval status in the console first.
+- **Missing or empty token**: If registration completed but token minting failed (e.g., due to EOF errors, timeouts, or approval issues), the tokens.json file may exist but contain no valid token. Check that the file contains a `token` field with a non-empty value before attempting to use it. Verify approval status in the console first. If the file exists but is empty, the approval process may not have completed—return to Step 1.
 
-- **Registration state issues**: If registration shows `status=pending` and token minting fails, the agent may be created but not approved. You must manually approve the agent in the console before the token will be minted. After approval, wait 10-15 seconds for background token minting to complete.
+- **Registration state issues**: If registration shows `status=pending` and token minting fails, the agent may be created but not approved. You must manually approve the agent in the console before the token will be minted. After approval, wait 10-15 seconds for background token minting to complete. If you see `error: agent for profile "default" is not active yet`, the approval is still in progress.
 
 - **Missing Authorization header**: The events endpoint requires authentication. Always include `Authorization: Bearer <token>` in your HTTP requests.
 
 - **Scope requirements**: Ensure your token has the `events:read` scope. This is granted by default to agents during registration, but verify if you encounter 403 Forbidden errors.
+
+- **Token extraction in scripts**: When extracting the token using `jq`, ensure the command completes successfully. If `jq` is not installed or the JSON is malformed, the token variable will be empty. Test token extraction before using it in curl commands.
 
 ## Verification
 
@@ -215,3 +226,6 @@ GET /events?type=<event_type>  # Filter by type
 3. Verify your token exists: `cat ~/.config/jentic/tokens.json | jq -r '.token'`
 4. Ensure the output is not empty or `null`
 5. If token is still missing, re-run `jentic register` to retry the registration and token minting process
+6. If you see `error: agent for profile "default" is not active yet`, approval is still pending—wait and retry
+
+```
