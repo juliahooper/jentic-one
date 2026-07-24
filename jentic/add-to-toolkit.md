@@ -2,7 +2,7 @@
 ---
 name: add-to-toolkit
 description: Request access to a toolkit containing API credentials so you can make proxied requests through the broker
-version: 4
+version: 5
 ---
 
 # Request Toolkit Access
@@ -18,7 +18,12 @@ Use this skill when you need to execute operations against an API that requires 
 - A toolkit must exist that contains the credential for the target API
 - You must know the toolkit reference in the format `vendor/toolkit-name`
 
-**Important:** If you have just registered an agent, ensure the registration completed successfully and you have a valid token before attempting to request toolkit access. If `jentic whoami` shows no token or authentication fails, you may need to complete the agent registration and approval process first. See the agent registration skill documentation for troubleshooting registration issues.
+**Important:** If you have just registered an agent, ensure the registration completed successfully and you have a valid token before attempting to request toolkit access. Agent registration is a two-step process: the CLI registers the agent and returns a pending status, then you must approve the agent in the Jentic console before a token is minted. If `jentic whoami` shows no token or authentication fails, check that:
+1. You approved the agent in the console (you'll see a URL like `http://<platform>/app/agents/<agent_id>`)
+2. You waited for background approval to complete (typically 10-15 seconds after approval)
+3. The token exchange succeeded after approval
+
+See the agent registration skill documentation for troubleshooting registration issues.
 
 ## Procedure
 
@@ -43,7 +48,7 @@ Authorization: Bearer <your_agent_token>
 
 **If this fails with authentication errors:**
 - Verify you have a valid token with `jentic whoami`
-- If no token is present, complete agent registration and approval first
+- If no token is present, check that your agent registration was approved in the console and the token exchange completed
 - The CLI does not have a `jentic auth` command; authentication is handled through the registration process
 
 ### 2. Request Toolkit Access
@@ -160,7 +165,8 @@ POST   {{ platform.control_plane_url }}/agent/token/refresh
 
 ## Pitfalls
 
-- **No valid authentication token**: If you attempt to request toolkit access without a valid token, commands will fail with authentication errors. Always verify you have a token with `jentic whoami` before proceeding. If registration completed but no token was minted, you may need to complete the approval process or re-register.
+- **No valid authentication token**: If you attempt to request toolkit access without a valid token, commands will fail with authentication errors. Always verify you have a token with `jentic whoami` before proceeding. If registration shows pending status but no token was minted, ensure you approved the agent in the Jentic console and waited for background approval to complete (typically 10-15 seconds).
+- **Agent registration pending but not approved**: After running `jentic register`, the agent enters a pending state. You must approve it in the Jentic console (using the URL provided in the registration output) before a token is minted. Background approval typically takes 10-15 seconds after you approve it in the console.
 - **Forgetting to refresh the token**: After a request is approved, you must refresh your agent token. The new toolkit binding is encoded in the JWT claims, not stored server-side per request.
 - **Wrong toolkit reference format**: Use `vendor/toolkit-name`, not `vendor/api-name` or `vendor/api-name/version`. Toolkits and APIs are separate entities.
 - **Not using `--wait` flag**: Without `--wait`, the CLI returns immediately and you must manually poll for approval status. Use `--wait` for auto-approved toolkits or when you expect quick manual approval.

@@ -2,7 +2,7 @@
 ---
 name: authenticate
 description: Exchange credentials for an access token (JWT bearer or CLI login) to access the Jentic platform
-version: 4
+version: 5
 ---
 
 # Authenticate with Jentic Platform
@@ -26,7 +26,7 @@ Authentication happens automatically during agent registration. When you registe
 **CLI:**
 The `jentic register` command stores tokens automatically in the CLI's configuration. No separate authentication command is needed.
 
-**Important**: Token minting only occurs after the agent registration is approved. If registration completes but approval fails or times out, the profile will be created without a token. In this case, re-run `jentic register` (without `--yes` flag if you want to see the approval process) to complete the token minting.
+**Important**: Token minting only occurs after the agent registration is approved. Registration creates the agent identity with `status=pending`, but tokens are only minted after approval is completed. If registration completes but approval fails, times out, or is not completed, the profile will be created without a token. In this case, approve the agent in the Jentic console (link provided in registration output), wait 10-15 seconds for background approval processing, then re-run `jentic register` to complete the token minting.
 
 **HTTP:**
 The registration endpoint (`POST /agents`) returns tokens in the response body:
@@ -96,7 +96,10 @@ Response contains new `access_token` and `expires_in`. Store the new access toke
 # Tokens obtained automatically during registration
 jentic register --name <agent-name>
 
-# If registration completes but token minting fails, re-run:
+# If registration completes but token minting fails:
+# 1. Approve the agent in the Jentic console (link in registration output)
+# 2. Wait 10-15 seconds for background approval processing
+# 3. Re-run registration to complete token minting:
 jentic register
 
 # Verify authentication
@@ -126,8 +129,8 @@ Body: { "refresh_token": "<token>" }
 ## Pitfalls
 
 - **No separate auth command**: Don't look for a `jentic login` or `jentic auth` command. Authentication happens during `jentic register`. The CLI will return "unknown command" errors for `jentic auth`.
-- **Approval required for token minting**: Registration creates the agent identity, but tokens are only minted after approval. If approval fails or times out (EOF errors, exit code 137), the profile will exist but have no token. Re-run `jentic register` to retry the approval and token minting process.
-- **Profile exists without token**: If `jentic profile list` shows a profile but no token, this indicates registration completed but token minting failed. Re-run `jentic register` to complete the process.
+- **Approval required for token minting**: Registration creates the agent identity with `status=pending`, but tokens are only minted after approval is completed. If registration returns `status=pending`, you must approve the agent in the Jentic console (URL provided in registration output), wait 10-15 seconds for background approval processing, then re-run `jentic register` to complete token minting. If you don't approve or re-run registration, the profile will exist but have no token.
+- **Profile exists without token**: If `jentic profile list` shows a profile but no token, this indicates registration completed but token minting failed. Approve the agent in the console and re-run `jentic register` to complete the process.
 - **Token storage**: CLI stores tokens automatically. For HTTP mode, you must implement secure token storage yourself.
 - **Refresh after toolkit changes**: After requesting toolkit access, run `jentic refresh` to update your token with new credential claims. The old token won't include newly granted permissions.
 - **Token expiration**: Access tokens expire. If you get 401 errors, refresh your token before retrying.
@@ -147,7 +150,7 @@ Or check your profile status:
 ```bash
 jentic profile list
 # Should show active profile with valid token and expiry time (typically 1h)
-# If no token is shown, re-run jentic register to complete token minting
+# If no token is shown, approve the agent in the console and re-run jentic register
 ```
 
 ### HTTP

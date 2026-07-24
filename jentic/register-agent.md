@@ -2,7 +2,7 @@
 ---
 name: register-agent
 description: Register a new agent identity on the Jentic platform and obtain authentication credentials
-version: 4
+version: 5
 ---
 
 # Register Agent Identity
@@ -29,6 +29,12 @@ jentic register --yes
 
 The `--yes` flag auto-confirms the registration. Without it, you'll be prompted to confirm.
 
+**Expected output:**
+```
+Registering agent "<agent-name>" with <control-plane-url> ...
+Registered: agent_id=<your-agent-id> status=pending
+```
+
 **HTTP:**
 ```
 POST {{ platform.control_plane_url }}/v1/agents/register
@@ -41,13 +47,20 @@ Content-Type: application/json
 ```
 
 **Expected Response:**
-- CLI: Progress messages indicating registration submitted and waiting for approval
 - HTTP: 202 Accepted with registration request details including a request ID
 
 ### 2. Wait for Admin Approval
 
 **CLI:**
-The `register` command automatically polls for approval. You'll see status updates in the output. This typically takes a few seconds in development environments (often with automatic approval enabled). The CLI will display clear confirmation when approval is complete, including your agent ID and token information.
+After registration is initiated, the agent enters `pending` status. The CLI will display an approval URL:
+```
+Approve this agent in the Jentic console:
+    <control-plane-url>/app/agents/<agent-id>
+```
+
+In development environments with automatic approval enabled, approval typically completes within 10-15 seconds. The CLI will automatically poll for approval status and proceed to token minting once approved.
+
+**Important:** If the CLI exits with an error after showing the approval URL, this may indicate the token minting step failed (see Pitfalls section). The agent may still be approved — check the approval URL or retry registration.
 
 **HTTP:**
 Poll the registration status endpoint:
@@ -140,7 +153,7 @@ Authorization: Bearer <refresh-token>
 
 - **Don't lose your tokens**: CLI stores them automatically, but if using HTTP directly, ensure you persist the refresh token securely. Access tokens expire, but refresh tokens are long-lived.
 
-- **Registration requires approval**: The registration process is asynchronous. Don't assume immediate access. The CLI handles polling automatically, but HTTP clients must implement polling logic. In development environments, approval may be automatic and take only a few seconds.
+- **Registration requires approval**: The registration process is asynchronous. Don't assume immediate access. The CLI handles polling automatically, but HTTP clients must implement polling logic. In development environments, approval may be automatic and take 10-15 seconds.
 
 - **Profile location (CLI)**: The CLI saves credentials to `.jentic/profiles/default`. If running in a containerized or restricted environment, ensure this path is writable and persistent.
 
@@ -152,11 +165,12 @@ Authorization: Bearer <refresh-token>
 
 - **Authentication is automatic**: After successful registration with the CLI, you are immediately authenticated. There is no separate authentication step required - the registration process handles credential storage and you can immediately proceed to use other commands like `jentic apis list` or `jentic access request`.
 
-- **Token minting failure**: In rare cases, the agent may be created and approved but the automatic token minting step may fail (e.g., "EOF" error when calling `/oauth/token`). If this occurs:
-  1. Check if the profile was created: look for `.jentic/profiles/default`
-  2. If the profile exists but has no token, try running `jentic logout` followed by `jentic register --yes` again
-  3. Running `jentic register` again with an existing agent will attempt to re-use the agent and complete the token minting process
+- **Token minting failure**: The CLI may exit with an error after displaying the approval URL and agent ID. This typically indicates a failure during the token minting step (e.g., connection error to the OAuth token endpoint). The agent may still be created and approved. If this occurs:
+  1. Check the approval URL shown in the output to verify the agent was created
+  2. Wait 10-15 seconds to ensure approval has completed
+  3. Run `jentic register --yes` again — the CLI will detect the existing agent and attempt to complete token minting
   4. If the problem persists, the OAuth token endpoint may be unavailable or misconfigured
+  5. Check platform logs or console for OAuth service errors
 
 - **Re-running register with existing agent**: If you run `jentic register` and an agent profile already exists, the CLI will display "Using existing agent_id=..." and show the approval URL. This can be used to recover from partial registration failures.
 
@@ -185,4 +199,5 @@ If `jentic agents list` fails with authentication errors after registration:
 2. Inspect the profile file to verify it contains token data
 3. If the profile exists but has no token, this indicates a token minting failure
 4. Try `jentic logout` followed by `jentic register --yes` to retry the full flow
+5. If the CLI exits with an error after showing the approval URL, wait 10-15 seconds and run `jentic register --yes` again to retry token minting
 ```

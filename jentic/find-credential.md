@@ -1,7 +1,7 @@
 ---
 name: find-credential
 description: Locate an API in the platform registry and identify its authentication requirements and available endpoints
-version: 4
+version: 5
 ---
 
 # Finding API Credentials and Endpoints
@@ -17,6 +17,8 @@ Use this skill when you need to discover what authentication method a registered
 - Knowledge of the API's vendor/name/version identifier (format: `vendor/name/version`)
 
 **Important:** You must have a valid authentication token before using any of the commands in this skill. If you encounter authentication errors or have no token, complete agent registration and authentication first (see separate skill documentation).
+
+**Note on agent registration:** After registering a new agent, you will receive a pending status and a link to approve it in the Jentic console. Token exchange may fail immediately after registration — this is normal. Wait 10-15 seconds for background approval to complete, then retry token exchange before proceeding with API discovery.
 
 ## Procedure
 
@@ -214,7 +216,7 @@ All HTTP requests require `Authorization: Bearer <token>` header.
 
 ## Pitfalls
 
-- **Don't use singular "api"**: The command is `jentic apis` (plural), not `jentic api`. Using the singular form will result in "unknown command" error.
+- **Don't use singular "api"**: The command is `jentic apis` (plural), not `jentic api` (singular). Using the singular form will result in "unknown command" error.
 - **Don't use partial API identifiers**: Commands like `jentic apis show <vendor>/<name>` without version will fail with "invalid API reference" error. Always use the full `vendor/name/version` format.
 - **Don't use unknown flags**: The `jentic apis operations` command does not accept an `--api` flag. The API identifier is passed as a positional argument.
 - **Don't use "auth" command**: There is no `jentic auth` command. Authentication is handled through the `jentic register` and profile management system. If you see "unknown command 'auth'" error, you're using an invalid command.
@@ -226,6 +228,7 @@ All HTTP requests require `Authorization: Bearer <token>` header.
 - **Empty operations list**: An API may be registered but show 0 operations if its current revision has no operations defined. This is not an error, but indicates the API is not yet ready for use.
 - **"toolkits" command may not exist**: The `jentic toolkits` command may not be available in all CLI versions. If you get "unknown command" error, this is expected and you should skip that verification step.
 - **Must be authenticated first**: All commands in this skill require a valid authentication token. If you don't have a token or your agent registration is incomplete, you must complete authentication before attempting to discover APIs. See agent registration and authentication skill documentation.
+- **Token exchange may fail immediately after registration**: After registering a new agent, the initial token exchange attempt may fail even though registration succeeded. This is normal — wait 10-15 seconds for background approval to complete, then retry the token exchange before proceeding with API discovery.
 
 ## Verification
 

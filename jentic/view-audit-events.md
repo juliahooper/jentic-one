@@ -1,7 +1,7 @@
 ---
 name: view-audit-events
 description: Access and browse the platform audit log to review agent activity and system events
-version: 2
+version: 3
 ---
 
 # View Audit Events
@@ -13,36 +13,58 @@ Use this skill when you need to review your agent's activity history, investigat
 ## Prerequisites
 
 - Active agent registration with the platform
+- Agent must be **approved** in the console before token minting will succeed
 - Valid authentication token with `events:read` scope (granted by default to agents)
 - Access to the platform control plane API
-- **Important**: You must have a valid token minted and stored. If registration completed but token minting failed, you may need to re-register or manually authenticate before accessing events.
+- **Important**: You must have a valid token minted and stored. If registration completed but token minting failed, approval may be pending or you may need to re-register after approval.
 
 ## Procedure
 
-### 1. Locate Your Authentication Token
+### 1. Ensure Agent Registration and Approval
 
-Before querying the events API, you need your bearer token for authentication.
+Before querying the events API, your agent must be registered **and approved** in the console.
 
 **CLI:**
 
-The `jentic` CLI stores tokens automatically after authentication. The token is typically stored in `~/.config/jentic/tokens.json` or a similar location depending on your platform.
-
 ```bash
-# Token is automatically used by CLI commands that support it
-# For direct API access, extract from tokens.json
-cat ~/.config/jentic/tokens.json
+jentic register
 ```
 
-⚠️ **Token Availability**: If you recently registered and the token file is empty or missing the `token` field, the automatic token minting may have failed. You may need to:
+The output will show:
+```
+Registered: agent_id=<agent_id> status=pending
+Approve this agent in the Jentic console:
+    http://<platform_url>/app/agents/<agent_id>
+```
+
+⚠️ **Critical**: Token minting happens **after** approval. If you see `status=pending`, you must approve the agent in the console before the token will be minted. The approval process may take 10-15 seconds to complete in the background.
+
+After approval completes, the token will be automatically stored in `~/.config/jentic/tokens.json`.
+
+### 2. Locate Your Authentication Token
+
+Once your agent is approved and registered, retrieve your bearer token for authentication.
+
+**CLI:**
+
+The `jentic` CLI stores tokens automatically after successful registration and approval. The token is typically stored in `~/.config/jentic/tokens.json`.
+
+```bash
+# Verify token exists and is not empty
+cat ~/.config/jentic/tokens.json | jq -r '.token'
+```
+
+⚠️ **Token Availability**: If the token file is empty, missing the `token` field, or returns `null`:
+- Verify the agent was approved in the console (check the agent status page)
+- Wait 10-15 seconds after approval for background token minting to complete
 - Re-run `jentic register` to retry the registration and token minting process
-- Ensure the agent is approved in the console before the token can be minted
 - Check that the registration process completed successfully without EOF or timeout errors
 
 **HTTP:**
 
 Your token was provided during the authentication flow. It should be stored securely by your agent. The token is used in the `Authorization` header as a Bearer token.
 
-### 2. Query the Events Endpoint
+### 3. Query the Events Endpoint
 
 The platform exposes audit events through the `/events` endpoint on the control plane.
 
@@ -86,7 +108,7 @@ Expected response (200 OK):
 }
 ```
 
-### 3. Filter or Paginate Results (Optional)
+### 4. Filter or Paginate Results (Optional)
 
 If the events list is large, you may need to filter by time range, event type, or paginate through results.
 
@@ -112,7 +134,7 @@ Common query parameters (check platform documentation for full list):
 - `type`: Filter by event type
 - `since`: ISO8601 timestamp for events after a certain time
 
-### 4. Parse and Analyze Events
+### 5. Parse and Analyze Events
 
 Review the returned events to find relevant activity. Key fields to examine:
 
@@ -128,8 +150,13 @@ Review the returned events to find relevant activity. Key fields to examine:
 ### CLI Commands
 
 ```bash
-# No native CLI command available (jentic auth does not exist)
-# Use direct API access:
+# Step 1: Register agent (must be approved in console before token is minted)
+jentic register
+
+# Step 2: Verify token exists
+cat ~/.config/jentic/tokens.json | jq -r '.token'
+
+# Step 3: Query events via direct API access
 TOKEN=$(cat ~/.config/jentic/tokens.json | jq -r '.token')
 curl -H "Authorization: Bearer $TOKEN" {{ platform.control_plane_url }}/events
 ```
@@ -144,15 +171,17 @@ GET /events?type=<event_type>  # Filter by type
 
 ## Pitfalls
 
+- **Agent not approved**: Registration creates an agent with `status=pending`. Token minting only occurs **after** the agent is approved in the console. If you attempt to access events before approval, the token will not exist. Always check the console approval page and wait 10-15 seconds for background processing.
+
 - **No CLI command**: The `jentic` CLI does not provide a native command for viewing events. Commands like `jentic events list` or `jentic auth` do not exist. You must make direct HTTP requests to the control plane API, even when using CLI mode for other operations.
 
 - **Wrong endpoint**: Do not confuse `/events` with `/audit`. The `/audit` endpoint requires `audit:read` scope which agents typically do not have by default. Use `/events` for agent activity logs.
 
 - **Token extraction**: When using CLI mode, you need to manually extract the token from the CLI's storage location (typically `~/.config/jentic/tokens.json`) to make direct API calls.
 
-- **Missing or empty token**: If registration completed but token minting failed (e.g., due to EOF errors, timeouts, or approval issues), the tokens.json file may exist but contain no valid token. Check that the file contains a `token` field with a non-empty value before attempting to use it.
+- **Missing or empty token**: If registration completed but token minting failed (e.g., due to EOF errors, timeouts, or approval issues), the tokens.json file may exist but contain no valid token. Check that the file contains a `token` field with a non-empty value before attempting to use it. Verify approval status in the console first.
 
-- **Registration state issues**: If registration shows `status=pending` and token minting fails, the agent may be created but not approved. You may need to manually approve the agent in the console or re-run registration after approval.
+- **Registration state issues**: If registration shows `status=pending` and token minting fails, the agent may be created but not approved. You must manually approve the agent in the console before the token will be minted. After approval, wait 10-15 seconds for background token minting to complete.
 
 - **Missing Authorization header**: The events endpoint requires authentication. Always include `Authorization: Bearer <token>` in your HTTP requests.
 
@@ -181,6 +210,8 @@ GET /events?type=<event_type>  # Filter by type
 
 **Before attempting to view events:**
 
-1. Verify your token exists: `cat ~/.config/jentic/tokens.json | jq -r '.token'`
-2. Ensure the output is not empty or `null`
-3. If token is missing, complete registration and approval process first
+1. Verify agent is approved in the console: Check the agent status page at `http://<platform_url>/app/agents/<agent_id>`
+2. Wait 10-15 seconds after approval for token minting to complete
+3. Verify your token exists: `cat ~/.config/jentic/tokens.json | jq -r '.token'`
+4. Ensure the output is not empty or `null`
+5. If token is still missing, re-run `jentic register` to retry the registration and token minting process
