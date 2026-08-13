@@ -1,4 +1,3 @@
-```markdown
 ---
 name: authenticate
 description: Exchange credentials for an access token (JWT bearer or CLI login) to access the Jentic platform
@@ -149,6 +148,9 @@ Authorization: Bearer <access_token>
 POST {{ platform.control_plane_url }}/auth/refresh
 Body: { "refresh_token": "<token>" }
 ```
+
+Add a 'Quick Start' section recommending: 'For agent authentication, use the `jentic bootstrap` command. This handles registration approval polling and credential setup automatically. Direct HTTP API JWT-bearer authentication is not recommended for initial setup.'
+
 
 ## Pitfalls
 
