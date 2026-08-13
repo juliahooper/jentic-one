@@ -36,6 +36,14 @@ async def inspect_operation(
     detail: Literal["summary", "full"] = Query("summary"),
 ) -> Response:
     """Inspect an operation — resolve to full structural detail."""
+    if not request.headers.get("X-Toolkit-Verified"):
+        raise ProblemDetailException(
+            status_code=422,
+            detail="inspection requires an active toolkit binding",
+            type="toolkit_not_verified",
+            instance="/inspect",
+        )
+
     if id and operation_id:
         raise BadRequest(
             detail="Provide exactly one of 'id' or 'operation_id', not both",
