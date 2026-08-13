@@ -1,4 +1,3 @@
-```markdown
 ---
 name: authenticate
 description: Exchange credentials for an access token (JWT bearer or CLI login) to access the Jentic platform
