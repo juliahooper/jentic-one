@@ -1,4 +1,3 @@
-```markdown
 ---
 name: authenticate
 description: Exchange credentials for an access token (JWT bearer or CLI login) to access the Jentic platform
@@ -112,6 +111,9 @@ Content-Type: application/json
 ```
 
 Response contains new `access_token` and `expires_in`. Store the new access token and use it for subsequent requests.
+
+Document in procedure that the token endpoint expects Content-Type: application/json with JSON body, not the standard form-encoding. Include example request showing JSON format.
+
 
 ## Quick Reference
 
