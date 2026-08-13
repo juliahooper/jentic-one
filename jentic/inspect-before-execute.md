@@ -1,6 +1,6 @@
 ---
 name: inspect-before-execute
-description: Documentation should include verification steps to confirm the inspect endpoint was actually called, not just that the agent understands the concept.
+description: Agent claimed to complete the inspect task but verification shows no actual inspect API calls were made; agent may have confused viewing audit logs with using the inspect endpoint
 version: 1
 ---
 
@@ -8,23 +8,20 @@ version: 1
 
 ## When to Use
 
-(Generated from QA harness observations)
+Use this skill when you need to perform the inspect before execute step in your workflow against the Jentic platform.
 
 ## Prerequisites
 
-- (To be documented based on run observations)
+- Access to the Jentic platform
+- Completed prior prerequisite tasks
 
 ## Procedure
 
-- (To be documented)
-
-## Quick Reference
-
-- (To be documented)
+*(To be documented from future run observations)*
 
 ## Pitfalls
 
-- (None identified yet)
+*(To be documented from future run observations)*
 
 ## Verification
 
