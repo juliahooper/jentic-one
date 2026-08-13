@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Syncs task-skill markdown docs from the skills/generated branch into the CLI embed tree.
 set -euo pipefail
 
 BRANCH="${SKILLS_BRANCH:-skills/generated}"
