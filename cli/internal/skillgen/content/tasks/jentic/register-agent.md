@@ -1,6 +1,6 @@
 ---
 name: register-agent
-description: Register a new agent identity on the Jentic platform and obtain authentication credentials
+description:
 version: 6
 ---
 
@@ -23,7 +23,7 @@ Use this skill when you need to create a new agent identity on the Jentic platfo
 
 **CLI:**
 ```bash
-jentic register --yes
+jentic agent register --yes
 ```
 
 The `--yes` flag auto-confirms the registration. Without it, you'll be prompted to confirm.
@@ -36,7 +36,7 @@ Registered: agent_id=<your-agent-id> status=pending
 
 **HTTP:**
 ```
-POST {{ platform.control_plane_url }}/v1/agents/register
+POST {{ platform.base_url }}/v1/agents/register
 Content-Type: application/json
 
 {
@@ -117,7 +117,7 @@ Authorization: Bearer <access-token>
 ### CLI Commands
 ```bash
 # Register new agent (with auto-confirm)
-jentic register --yes
+jentic register --yes --auto-approve
 
 # Register with interactive confirmation
 jentic register
