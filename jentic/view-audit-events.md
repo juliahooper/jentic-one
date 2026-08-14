@@ -1,4 +1,3 @@
-```markdown
 ---
 name: view-audit-events
 description: Access and browse the platform audit log to review agent activity and system events
@@ -197,6 +196,9 @@ GET /events?type=<event_type>  # Filter by type
 - **Scope requirements**: Ensure your token has the `events:read` scope. This is granted by default to agents during registration, but verify if you encounter 403 Forbidden errors.
 
 - **Token extraction in scripts**: When extracting the token using `jq`, ensure the command completes successfully. If `jq` is not installed or the JSON is malformed, the token variable will be empty. Test token extraction before using it in curl commands.
+
+Add a pitfall or note stating: 'Audit log access requires the audit:read scope, which is typically restricted to operator-level agents. Regular agents can view their own execution history via the executions endpoint instead.'
+
 
 ## Verification
 
